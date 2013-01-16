@@ -1,4 +1,5 @@
 bin
+lib
 .metadata
 sftpd.conf
 *.class
