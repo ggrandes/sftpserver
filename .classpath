@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/bcprov-jdk15-140.jar"/>
+	<classpathentry kind="lib" path="lib/jzlib-1.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/mina-core-2.0.5.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-api-1.6.4.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-simple-1.6.4.jar"/>
+	<classpathentry kind="lib" path="lib/sshd-core-0.8.0.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
