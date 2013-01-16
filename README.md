@@ -1,7 +1,6 @@
 # sftpserver
 
-SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. 
-Open Source Java project under Apache License, Version 2.0
+SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Source Java project under Apache License v2.0
 
 ---
 
