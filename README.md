@@ -1,6 +1,7 @@
 # sftpserver
 
-SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Source Java project under Apache License, Version 2.0
+SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. 
+Open Source Java project under Apache License, Version 2.0
 
 ---
 
@@ -33,7 +34,7 @@ Config file must be in class-path, general format is:
 
 ## Compile (handmade)
 
-    LIB="lib/mina-core-`XXX`.jar:lib/sshd-core-`XXX`.jar:lib/slf4j-api-`XXX`.jar:slf4j-simple-`XXX`.jar:lib/bcprov-jdk`XXX`.jar"
+    LIB="lib/mina-core-XXX.jar:lib/sshd-core-XXX.jar:lib/slf4j-api-XXX.jar:slf4j-simple-XXX.jar:lib/bcprov-jdkXXX.jar"
     mkdir classes
     javac -d classes/ -cp "$LIB" src/net/sftp/Server.java
     jar cvf sftpserver-x.y.z.jar -C classes/ .
