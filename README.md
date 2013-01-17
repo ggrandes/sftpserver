@@ -21,7 +21,7 @@ Config file must be in class-path, general format is:
 	#
 	# Password for user
 	sftpserver.user.test.userpassword=clean-unencripted-password
-	# Ser user home directory (chrooted)
+	# Set user home directory (chrooted)
 	sftpserver.user.test.homedirectory=/home/test/
 	# Enable user (default: false)
 	sftpserver.user.test.enableflag=true
