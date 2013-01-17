@@ -1,8 +1,8 @@
+*.class
 bin
 lib
 .metadata
 sftpd.conf
-*.class
 
 # Package Files #
 *.jar
