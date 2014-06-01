@@ -46,6 +46,8 @@ Config file must be in class-path, general format is:
 
 # TODOs
 
+* Mavenize
+* Make UberJar for distribution
 * Encrypted Passwords (SHA1/MD5)
 * Publickey Authenticator
 * Use Java SecurityManager/Policy File
