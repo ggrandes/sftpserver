@@ -47,7 +47,7 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 
 # DONEs
 
-* Use Java SecurityManager/Policy File (`lib/sftpd.policy`)
+* Use Java SecurityManager/Policy File
 * Non operating system accounts
 * Homes are chrooted
 * ReadOnly accounts
@@ -55,7 +55,8 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 ## MISC
 Current harcoded values:
 
-* Hostkeys are writed to: `keys/hostkey.pem` or `keys/hostkey.set` in `${sftp.home}` directory
+* Hostkeys are writed to: `hostkey.pem` or `hostkey.set` in `${sftp.home}/keys/` directory
+* SecurityManager/Policy File is in `lib/sftpd.policy`
 * Only SHA1 (160bits) are enabled for HMAC (MD5, MD5-96, SHA1-96 are disabled)
 
 ---
