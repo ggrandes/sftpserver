@@ -2,7 +2,6 @@
 bin
 lib
 .metadata
-sftpd.conf
 hostkey.*
 target
 .settings
