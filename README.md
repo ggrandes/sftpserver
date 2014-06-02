@@ -4,7 +4,9 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 
 ---
 
-## Config (`${sftp.home}/conf/[id]/sftpd.properties`):
+## Config:
+
+###### `${sftp.home}/conf/[id]/sftpd.properties`
 
 	#
 	## Global Options
