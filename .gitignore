@@ -4,7 +4,8 @@ lib
 .metadata
 sftpd.conf
 hostkey.*
-
+target
+.settings
 # Package Files #
 *.jar
 *.war

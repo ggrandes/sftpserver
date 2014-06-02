@@ -4,16 +4,15 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 
 ---
 
-## Config (sftpd.conf)
-Config file must be in class-path, general format is:
+## Config (`${sftp.home}/conf/[id]/sftpd.properties`):
 
 	#
 	## Global Options
 	#
 	# Listen on TCP port 22222
 	sftpserver.global.port=22222
-	# Disable compression (requires jzlib) (default: false)
-	sftpserver.global.compress=false
+	# Enable compression (requires jzlib) (default: false)
+	sftpserver.global.compress=true
 	# Enable dummy shell (default: false)
 	sftpserver.global.dummyshell=true
 	#
@@ -22,7 +21,7 @@ Config file must be in class-path, general format is:
 	# Password for user
 	sftpserver.user.test.userpassword=clean-unencripted-password
 	# Set user home directory (chrooted)
-	sftpserver.user.test.homedirectory=/home/test/
+	sftpserver.user.test.homedirectory=./home/test/
 	# Enable user (default: false)
 	sftpserver.user.test.enableflag=true
 	# Enable write (default: false)
@@ -31,29 +30,20 @@ Config file must be in class-path, general format is:
 
 ---
 
-## Compile (handmade)
+## Running (Linux)
 
-    LIB="lib/mina-core-XXX.jar:lib/sshd-core-XXX.jar:lib/slf4j-api-XXX.jar:slf4j-simple-XXX.jar:lib/bcprov-jdkXXX.jar"
-    mkdir classes
-    javac -d classes/ -cp "$LIB" src/net/sftp/Server.java
-    jar cvf sftpserver-x.y.z.jar -C classes/ .
-
-## Running
-
-    java -cp .:sftpserver-x.y.z.jar net.sftp.Server
+    ./bin/sftpd.sh <start|stop|restart|status> [id]
 
 ---
 
 # TODOs
 
-* Mavenize
-* Make UberJar for distribution
 * Encrypted Passwords (SHA1/MD5)
 * Publickey Authenticator
-* Use Java SecurityManager/Policy File
 
 # DONEs
 
+* Use Java SecurityManager/Policy File
 * Non operating system accounts
 * Homes are chrooted
 * ReadOnly accounts
@@ -61,12 +51,12 @@ Config file must be in class-path, general format is:
 ## MISC
 Current harcoded values:
 
-* Hostkeys are writed to: `hostkey.pem` or `hostkey.set` in current directory
+* Hostkeys are writed to: `keys/hostkey.pem` or `keys/hostkey.set` in `${sftp.home}` directory
 * Only SHA1 (160bits) are enabled for HMAC (MD5, MD5-96, SHA1-96 are disabled)
 
 ---
 
-Requirement (external JARs):
+Maven Dependencies:
 
 [Apache MINA SSHD](http://mina.apache.org/sshd-project/)
 

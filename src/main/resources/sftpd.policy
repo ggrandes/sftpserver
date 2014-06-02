@@ -1,0 +1,48 @@
+// ============================================================================
+// sftpd.policy - Security Policy Permissions for SFTPD Server
+//
+// This file contains a default set of security policies to be enforced by JVM
+//
+// $Id: sftpd.policy,v 1.00 2013/01/31 21:26:00 ggrandes Exp $
+// ============================================================================
+//
+// Load with: -Djava.security.manager -Djava.security.policy=sftpd.policy
+//
+// Troubleshooting: -Djava.security.debug=access:failure 
+// http://docs.oracle.com/javase/1.5.0/docs/guide/plugin/developer_guide/debugger.html
+//
+grant {
+  //
+  permission java.util.PropertyPermission "sftp.id", "read";
+  permission java.util.PropertyPermission "sftp.home", "read";
+  permission java.util.PropertyPermission "user.dir", "read";
+  permission java.util.PropertyPermission "sshd.*", "read";
+  //
+  permission java.lang.RuntimePermission "shutdownHooks";
+  permission java.lang.RuntimePermission "modifyThread";
+  permission java.lang.RuntimePermission "readFileDescriptor";
+  permission java.lang.RuntimePermission "writeFileDescriptor";
+  //
+  permission java.security.SecurityPermission "putProviderProperty.BC";
+  permission java.security.SecurityPermission "insertProvider.BC";
+  //
+  permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+  //
+  permission java.net.SocketPermission "localhost", "listen";
+  permission java.net.SocketPermission "*", "accept, connect, resolve";
+  //
+  permission java.io.FilePermission "${java.home}${/}-", "read";
+  permission java.io.FilePermission "${java.io.tmpdir}${/}-", "read, write, delete";
+  //
+  permission java.io.FilePermission "/etc/resolv.conf", "read";
+  permission java.io.FilePermission "${sftp.home}/-", "read";
+  permission java.io.FilePermission "${sftp.home}/keys/hostkey.ser", "read, write";
+  permission java.io.FilePermission "${sftp.home}/keys/hostkey.pem", "read, write";
+  // Home for Users
+  permission java.io.FilePermission "${sftp.home}/home/-", "read, write, delete";
+  // Directory for logs (if use log4j)
+  permission java.io.FilePermission "${sftp.home}/log/-", "read, write";
+  //
+  // This Disable all security
+  //permission java.security.AllPermission;
+};
