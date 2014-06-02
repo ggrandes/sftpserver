@@ -47,7 +47,7 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 
 # DONEs
 
-* Use Java SecurityManager/Policy File
+* Use Java SecurityManager/Policy File (`lib/sftpd.policy`)
 * Non operating system accounts
 * Homes are chrooted
 * ReadOnly accounts
