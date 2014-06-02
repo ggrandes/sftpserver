@@ -64,10 +64,21 @@ Maven Dependencies:
 
 * mina-core-`XXX`.jar
 * sshd-core-`XXX`.jar
+
+[Log4J (logging)](http://logging.apache.org/log4j/1.2/)
+
 * log4j-`XXX`.jar
+
+[SLF4J (logging)](http://www.slf4j.org/)
+
 * slf4j-api-`XXX`.jar
 * slf4j-log4j12-`XXX`.jar
+
+
+[Bouncy Castle (encryption)](http://www.bouncycastle.org/java.html)
+
 * bcprov-jdk`XXX`.jar
+
 
 [JZlib (for compression)](http://www.jcraft.com/jzlib/)
 
