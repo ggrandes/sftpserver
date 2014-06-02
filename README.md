@@ -64,8 +64,9 @@ Maven Dependencies:
 
 * mina-core-`XXX`.jar
 * sshd-core-`XXX`.jar
+* log4j-`XXX`.jar
 * slf4j-api-`XXX`.jar
-* slf4j-simple-`XXX`.jar
+* slf4j-log4j12-`XXX`.jar
 * bcprov-jdk`XXX`.jar
 
 [JZlib (for compression)](http://www.jcraft.com/jzlib/)
