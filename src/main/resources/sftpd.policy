@@ -13,6 +13,9 @@
 //
 grant {
   //
+  permission java.util.logging.LoggingPermission "control";
+  permission java.util.PropertyPermission "log4j.*", "read";
+  //
   permission java.util.PropertyPermission "sftp.id", "read";
   permission java.util.PropertyPermission "sftp.home", "read";
   permission java.util.PropertyPermission "user.dir", "read";
