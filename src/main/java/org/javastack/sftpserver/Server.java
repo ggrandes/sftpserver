@@ -12,7 +12,7 @@
  *  limitations under the License.
  *
  */
-package net.sftp;
+package org.javastack.sftpserver;
 
 import java.io.File;
 import java.io.IOException;

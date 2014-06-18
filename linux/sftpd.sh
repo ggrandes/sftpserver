@@ -4,7 +4,7 @@ SFTPD_HOME=${SFTPD_HOME:-/opt/sftpd}
 SFTPD_CLASSPATH=$(echo $SFTPD_HOME/lib/*.jar | tr ' ' ':')
 SFTPD_POLICY="file:${SFTPD_HOME}/lib/sftpd.policy"
 ID=${2:-default}
-MAIN_CLASS="net.sftp.Server"
+MAIN_CLASS="org.javastack.sftpserver.Server"
 PIDFILE="${SFTPD_HOME}/pid/sftpd-${ID}.pid"
 #
 do_start () {
