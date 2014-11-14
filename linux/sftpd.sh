@@ -1,5 +1,5 @@
 #!/bin/bash
-JAVA_HOME=${JAVA_HOME:-/opt/java/java16}
+JAVA_HOME=${JAVA_HOME:-/opt/java/java-current}
 SFTPD_HOME=${SFTPD_HOME:-/opt/sftpd}
 SFTPD_CLASSPATH=$(echo $SFTPD_HOME/lib/*.jar | tr ' ' ':')
 SFTPD_POLICY="file:${SFTPD_HOME}/lib/sftpd.policy"
