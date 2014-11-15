@@ -415,8 +415,6 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		protected SshFile getFile(final String dir, final String file) {
 			final String physicalName = SecureSshFile.getPhysicalName(rootDir, dir, file, caseInsensitive);
 			final File fileObj = new File(physicalName);
-			LOG.info("getFile(" + dir + ", " + file + ") root=" + rootDir + " physical=" + physicalName
-					+ " file=" + fileObj.getAbsolutePath());
 			return new SecureSshFile(this, file, fileObj, userName, isReadOnly);
 		}
 	}
