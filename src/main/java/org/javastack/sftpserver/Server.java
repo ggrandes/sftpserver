@@ -21,7 +21,10 @@ import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
+
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.Compression;
 import org.apache.sshd.common.Factory;
@@ -31,18 +34,21 @@ import org.apache.sshd.common.Session;
 import org.apache.sshd.common.compression.CompressionDelayedZlib;
 import org.apache.sshd.common.compression.CompressionNone;
 import org.apache.sshd.common.compression.CompressionZlib;
+import org.apache.sshd.common.file.FileSystemFactory;
+import org.apache.sshd.common.file.FileSystemView;
+import org.apache.sshd.common.file.SshFile;
+import org.apache.sshd.common.file.nativefs.NativeFileSystemView;
+import org.apache.sshd.common.file.nativefs.NativeSshFile;
 import org.apache.sshd.common.mac.HMACSHA1;
+import org.apache.sshd.common.mac.HMACSHA256;
+import org.apache.sshd.common.mac.HMACSHA512;
 import org.apache.sshd.common.util.SecurityUtils;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
-import org.apache.sshd.server.FileSystemFactory;
-import org.apache.sshd.server.FileSystemView;
 import org.apache.sshd.server.PasswordAuthenticator;
 import org.apache.sshd.server.PublickeyAuthenticator;
-import org.apache.sshd.server.SshFile;
 import org.apache.sshd.server.command.ScpCommandFactory;
-import org.apache.sshd.server.filesystem.NativeSshFile;
 import org.apache.sshd.server.keyprovider.PEMGeneratorHostKeyProvider;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerSession;
@@ -52,30 +58,36 @@ import org.slf4j.LoggerFactory;
 
 /**
  * SFTP Server
- *
+ * 
  * @author Guillermo Grandes / guillermo.grandes[at]gmail.com
  */
 public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
-	public static final String VERSION = "1.0.3";
+	public static final String VERSION = "1.0.4";
 	public static final String CONFIG_FILE = "/sftpd.properties";
 	public static final String HOSTKEY_FILE_PEM = "keys/hostkey.pem";
 	public static final String HOSTKEY_FILE_SER = "keys/hostkey.ser";
-	//
-	private final Logger LOG = LoggerFactory.getLogger(Server.class);
+
+	private static final Logger LOG = LoggerFactory.getLogger(Server.class);
 	private Config db;
 	private SshServer sshd;
-	//
+
 	public static void main(final String[] args) {
 		new Server().start();
 	}
+
 	@SuppressWarnings("unchecked")
 	protected void setupFactories() {
-		sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(new SftpSubsystem.Factory()));
-		sshd.setMacFactories(Arrays.<NamedFactory<Mac>>asList(new HMACSHA1.Factory()));
+		sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>> asList(new SftpSubsystem.Factory()));
+		sshd.setMacFactories(Arrays.<NamedFactory<Mac>> asList( //
+				new HMACSHA512.Factory(), //
+				new HMACSHA256.Factory(), //
+				new HMACSHA1.Factory()));
 	}
+
 	protected void setupDummyShell() {
 		sshd.setShellFactory(new SecureShellFactory());
 	}
+
 	protected void setupKeyPair() {
 		if (SecurityUtils.isBouncyCastleRegistered()) {
 			sshd.setKeyPairProvider(new PEMGeneratorHostKeyProvider(HOSTKEY_FILE_PEM));
@@ -83,26 +95,31 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(HOSTKEY_FILE_SER));
 		}
 	}
+
 	protected void setupScp() {
 		sshd.setCommandFactory(new ScpCommandFactory());
 		sshd.setFileSystemFactory(new SecureFileSystemFactory(db));
-		sshd.setForwardingFilter(null);
+		sshd.setTcpipForwardingFilter(null);
+		sshd.setAgentFactory(null);
 	}
+
 	protected void setupAuth() {
 		sshd.setPasswordAuthenticator(this);
 		sshd.setPublickeyAuthenticator(null);
 		sshd.setGSSAuthenticator(null);
 	}
+
 	@SuppressWarnings("unchecked")
 	protected void setupCompress() {
 		// Compression is not enabled by default
 		// You need download and compile:
 		// http://www.jcraft.com/jzlib/
-		sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>>asList(
-				new CompressionNone.Factory(),
-				new CompressionZlib.Factory(),
+		sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>> asList( //
+				new CompressionNone.Factory(), //
+				new CompressionZlib.Factory(), //
 				new CompressionDelayedZlib.Factory()));
 	}
+
 	protected Config loadConfig() {
 		final Properties db = new Properties();
 		try {
@@ -119,6 +136,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		return new Config(db);
 
 	}
+
 	private void hackVersion() {
 		// Use reflection to rewrite version info
 		try {
@@ -130,13 +148,14 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 					f.setAccessible(true);
 					f.set(sshd, "SSHD");
 					break;
-				} catch(NoSuchFieldException e) {
+				} catch (NoSuchFieldException e) {
 					c = c.getSuperclass();
 				}
 			}
 		} catch (Throwable t) {
 		}
 	}
+
 	public void start() {
 		LOG.info("Starting");
 		db = loadConfig();
@@ -147,7 +166,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		setupKeyPair();
 		setupScp();
 		setupAuth();
-		//
+
 		try {
 			final int port = db.getPort();
 			final boolean enableCompress = db.enableCompress();
@@ -157,7 +176,6 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			if (enableDummyShell)
 				setupDummyShell();
 			sshd.setPort(port);
-			sshd.setReuseAddress(true);
 			LOG.info("Listen on port=" + port);
 			final Server thisServer = this;
 			Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -170,6 +188,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			LOG.error("Exception " + e.toString(), e);
 		}
 	}
+
 	public void stop() {
 		LOG.info("Stoping");
 		try {
@@ -178,6 +197,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			Thread.currentThread().interrupt();
 		}
 	}
+
 	@Override
 	public boolean authenticate(final String username, final String password, final ServerSession session) {
 		LOG.info("Request auth (Password) for username=" + username);
@@ -186,10 +206,11 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		}
 		return false;
 	}
+
 	@Override
 	public boolean authenticate(final String username, final PublicKey key, final ServerSession session) {
 		LOG.info("Request auth (PublicKey) for username=" + username);
-		//File f = new File("/home/" + username + "/.ssh/authorized_keys");
+		// File f = new File("/home/" + username + "/.ssh/authorized_keys");
 		return false;
 	}
 
@@ -208,39 +229,46 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		public static final String PROP_HOME = "homedirectory";
 		public static final String PROP_ENABLED = "enableflag"; // true / false
 		public static final String PROP_ENABLE_WRITE = "writepermission"; // true / false
-		//
+
 		private final Properties db;
-		//
+
 		public Config(final Properties db) {
 			this.db = db;
 		}
+
 		public boolean enableCompress() {
 			return Boolean.parseBoolean(getValue(PROP_COMPRESS));
 		}
+
 		public boolean enableDummyShell() {
 			return Boolean.parseBoolean(getValue(PROP_DUMMY_SHELL));
 		}
+
 		// Global config
 		public int getPort() {
 			return Integer.parseInt(getValue(PROP_PORT));
 		}
+
 		private final String getValue(final String key) {
 			if (key == null)
 				return null;
-			return db.getProperty(PROP_GLOBAL + "." + key);			
+			return db.getProperty(PROP_GLOBAL + "." + key);
 		}
+
 		// User config
 		private final String getValue(final String user, final String key) {
 			if ((user == null) || (key == null))
 				return null;
-			return db.getProperty(PROP_BASE_USERS + "." + user + "." + key);			
+			return db.getProperty(PROP_BASE_USERS + "." + user + "." + key);
 		}
+
 		public boolean isEnabledUser(final String user) {
 			final String value = getValue(user, PROP_ENABLED);
 			if (value == null)
 				return false;
 			return Boolean.parseBoolean(value);
 		}
+
 		public boolean checkUserPassword(final String user, final String pwd) {
 			if (pwd == null)
 				return false;
@@ -252,6 +280,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 				return false;
 			return (value.equals(pwd));
 		}
+
 		public String getHome(final String user) {
 			try {
 				final File home = new File(getValue(user, PROP_HOME));
@@ -262,6 +291,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			}
 			return null;
 		}
+
 		public boolean hasWritePerm(final String user) {
 			final String value = getValue(user, PROP_ENABLE_WRITE);
 			return Boolean.parseBoolean(value);
@@ -278,21 +308,25 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	static class SecureShellCommand implements Command {
 		private OutputStream err = null;
 		private ExitCallback callback = null;
-		//
+
 		@Override
 		public void setInputStream(final InputStream in) {
 		}
+
 		@Override
 		public void setOutputStream(final OutputStream out) {
 		}
+
 		@Override
 		public void setErrorStream(final OutputStream err) {
 			this.err = err;
 		}
+
 		@Override
 		public void setExitCallback(final ExitCallback callback) {
 			this.callback = callback;
 		}
+
 		@Override
 		public void start(final Environment env) throws IOException {
 			if (err != null) {
@@ -302,6 +336,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			if (callback != null)
 				callback.onExit(-1, "shell not allowed");
 		}
+
 		@Override
 		public void destroy() {
 		}
@@ -311,14 +346,13 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 
 	static class SecureFileSystemFactory implements FileSystemFactory {
 		private final Config db;
-		//
+
 		public SecureFileSystemFactory(final Config db) {
 			this.db = db;
 		}
-		//
+
 		@Override
-		public FileSystemView createFileSystemView(final Session session)
-				throws IOException {
+		public FileSystemView createFileSystemView(final Session session) throws IOException {
 			final String userName = session.getUsername();
 			final String home = db.getHome(userName);
 			if (home == null) {
@@ -328,53 +362,117 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		}
 	}
 
-	static class SecureFileSystemView implements FileSystemView {
-		// the first and the last character will always be '/'
-		// It is always with respect to the root directory.
-		private String currDir = "/";
-		private String rootDir = "/";
-		private String userName;
-		private boolean isReadOnly = true;
-		private boolean caseInsensitive = false;
-		//
+	static class SecureFileSystemView extends NativeFileSystemView {
+		private static final boolean caseInsensitive = false;
+		private final String rootDir;
+		private final String userName;
+		private final boolean isReadOnly;
+
 		public SecureFileSystemView(final String rootDir, final String userName, final boolean isReadOnly) {
+			super(userName, Collections.singletonMap("/", "/"), "/", File.pathSeparatorChar, caseInsensitive);
 			this.rootDir = SecureSshFile.normalizeSeparateChar(rootDir);
 			this.userName = userName;
 			this.isReadOnly = isReadOnly;
 		}
-		//
+
+		@Override
+		public FileSystemView getNormalizedView() {
+			return this;
+		}
+
 		@Override
 		public SshFile getFile(final String file) {
-			return getFile(currDir, file);
+			return getFile("/", file);
 		}
+
 		@Override
 		public SshFile getFile(final SshFile baseDir, final String file) {
 			return getFile(baseDir.getAbsolutePath(), file);
 		}
-		//
-		protected SshFile getFile(final String dir, final String file) {
-			// get actual file object
-			String physicalName = SecureSshFile.getPhysicalName("/", dir, file, caseInsensitive);
-			File fileObj = new File(rootDir, physicalName); // chroot
 
-			// strip the root directory and return
-			String userFileName = physicalName.substring("/".length() - 1);
-			return new SecureSshFile(userFileName, fileObj, userName, isReadOnly);
+		protected SshFile getFile(final String dir, final String file) {
+			final String physicalName = SecureSshFile.getPhysicalName(rootDir, dir, file, caseInsensitive);
+			final File fileObj = new File(physicalName);
+			LOG.info("getFile(" + dir + ", " + file + ") root=" + rootDir + " physical=" + physicalName
+					+ " file=" + fileObj.getAbsolutePath());
+			return new SecureSshFile(this, file, fileObj, userName, isReadOnly);
 		}
 	}
 
 	static class SecureSshFile extends NativeSshFile {
 		final boolean isReadOnly;
-		//
-		public SecureSshFile(final String fileName, final File file, final String userName, final boolean isReadOnly) {
-			super(fileName, file, userName);
+
+		public SecureSshFile(final SecureFileSystemView fileSystemView, final String fileName,
+				final File file, final String userName, final boolean isReadOnly) {
+			super(fileSystemView, fileName, file, userName);
 			this.isReadOnly = isReadOnly;
 		}
-		//
+
+		@Override
+		public boolean isRemovable() {
+			return isWritable();
+		}
+
+		@Override
 		public boolean isWritable() {
 			if (isReadOnly)
 				return false;
 			return super.isWritable();
+		}
+
+		@Override
+		public boolean mkdir() {
+			if (isReadOnly)
+				return false;
+			return super.mkdir();
+		}
+
+		@Override
+		public boolean delete() {
+			if (isReadOnly)
+				return false;
+			return super.delete();
+		}
+
+		@Override
+		public boolean create() throws IOException {
+			if (isReadOnly)
+				return false;
+			return super.create();
+		}
+
+		@Override
+		public void truncate() throws IOException {
+			if (isReadOnly)
+				return;
+		}
+
+		@Override
+		public boolean move(final SshFile destination) {
+			if (isReadOnly)
+				return false;
+			return super.move(destination);
+		}
+
+		@Override
+		public void setAttributes(final Map<Attribute, Object> attributes) throws IOException {
+			if (isReadOnly)
+				return;
+			super.setAttributes(attributes);
+		}
+
+		@Override
+		public void setAttribute(final Attribute attribute, final Object value) throws IOException {
+			if (isReadOnly)
+				return;
+			super.setAttribute(attribute, value);
+		}
+
+		@Override
+		public void createSymbolicLink(final SshFile destination) throws IOException {
+			if (isReadOnly)
+				return;
+			super.createSymbolicLink(destination);
 		}
 	}
 }

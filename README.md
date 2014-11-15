@@ -2,7 +2,7 @@
 
 SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Source Java project under Apache License v2.0
 
-### Current Stable Version is [1.0.3](https://maven-release.s3.amazonaws.com/release/org/javastack/sftpserver/1.0.3/sftpserver-1.0.3-bin.zip)
+### Current Stable Version is [1.0.4](https://maven-release.s3.amazonaws.com/release/org/javastack/sftpserver/1.0.4/sftpserver-1.0.4-bin.zip)
 
 ---
 
@@ -57,7 +57,7 @@ Current harcoded values:
 
 * Hostkeys are writed to: `hostkey.pem` or `hostkey.set` in `${sftp.home}/keys/` directory
 * SecurityManager/Policy File is in `lib/sftpd.policy`
-* Only SHA1 (160bits) are enabled for HMAC (MD5, MD5-96, SHA1-96 are disabled)
+* Only SHA2-512, SHA2-256 and SHA1-160 are enabled for HMAC (MD5, MD5-96, SHA1-96 are disabled)
 
 ---
 
