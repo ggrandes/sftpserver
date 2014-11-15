@@ -2,7 +2,7 @@
 
 SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Source Java project under Apache License v2.0
 
-### Current Stable Version is [1.0.4](https://maven-release.s3.amazonaws.com/release/org/javastack/sftpserver/1.0.4/sftpserver-1.0.4-bin.zip)
+### Current Stable Version is [1.0.5](https://maven-release.s3.amazonaws.com/release/org/javastack/sftpserver/1.0.5/sftpserver-1.0.5-bin.zip)
 
 ---
 
@@ -38,11 +38,14 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 
     ./bin/sftpd.sh <start|stop|restart|status> [id]
 
+## Generate Encrypted Password (Linux)
+
+    ./bin/sftpd.sh <pwd>
+
 ---
 
 # TODOs
 
-* Encrypted Passwords (SHA1/MD5)
 * Publickey Authenticator
 
 # DONEs
@@ -51,6 +54,7 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 * Non operating system accounts
 * Homes are chrooted
 * ReadOnly accounts
+* Encrypted Passwords (SHA2/MD5/APR1)
 
 ## MISC
 Current harcoded values:
@@ -68,6 +72,10 @@ Maven Dependencies:
 * mina-core-`XXX`.jar
 * sshd-core-`XXX`.jar
 
+[Apache Commons Codec (password encryption)](http://commons.apache.org/codec/)
+
+* commons-codec-`XXX`.jar
+
 [Log4J (logging)](http://logging.apache.org/log4j/1.2/)
 
 * log4j-`XXX`.jar
@@ -79,7 +87,8 @@ Maven Dependencies:
 
 [Bouncy Castle (encryption)](http://www.bouncycastle.org/java.html)
 
-* bcprov-jdk`XXX`.jar
+* bcprov-jdk15on-`XXX`.jar
+* bcpkix-jdk15on-`XXX`.jar
 
 [JZlib (for compression)](http://www.jcraft.com/jzlib/)
 

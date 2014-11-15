@@ -270,15 +270,37 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		}
 
 		public boolean checkUserPassword(final String user, final String pwd) {
-			if (pwd == null)
-				return false;
-			if (!isEnabledUser(user)) {
-				return false;
+			final StringBuilder sb = new StringBuilder(96);
+			boolean traceInfo = false;
+			boolean authOk = false;
+			sb.append("Request auth (Password) for username=").append(user).append(" ");
+			try {
+				if (!isEnabledUser(user)) {
+					sb.append("(user disabled)");
+					return authOk;
+				}
+				final String value = getValue(user, PROP_PWD);
+				if (value == null) {
+					sb.append("(no password)");
+					return authOk;
+				}
+				final boolean isCrypted = PasswordEncrypt.isCrypted(value);
+				authOk = isCrypted ? PasswordEncrypt.checkPassword(value, pwd) : value.equals(pwd);
+				sb.append(isCrypted ? "(encrypted)" : "(unencrypted)");
+				traceInfo = isCrypted;
+			} finally {
+				sb.append(": ").append(authOk ? "OK" : "FAIL");
+				if (authOk) {
+					if (traceInfo) {
+						LOG.info(sb.toString());
+					} else {
+						LOG.warn(sb.toString());
+					}
+				} else {
+					LOG.error(sb.toString());
+				}
 			}
-			final String value = getValue(user, PROP_PWD);
-			if (value == null)
-				return false;
-			return (value.equals(pwd));
+			return authOk;
 		}
 
 		public String getHome(final String user) {

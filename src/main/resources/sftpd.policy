@@ -14,6 +14,8 @@
 grant {
   //
   permission java.util.logging.LoggingPermission "control";
+  //
+  permission java.util.PropertyPermission "org.apache.sshd.*", "read";
   permission java.util.PropertyPermission "log4j.*", "read";
   //
   permission java.util.PropertyPermission "sftp.id", "read";
@@ -25,6 +27,7 @@ grant {
   permission java.lang.RuntimePermission "modifyThread";
   permission java.lang.RuntimePermission "readFileDescriptor";
   permission java.lang.RuntimePermission "writeFileDescriptor";
+  permission java.lang.RuntimePermission "accessUserInformation";
   //
   permission java.security.SecurityPermission "putProviderProperty.BC";
   permission java.security.SecurityPermission "insertProvider.BC";

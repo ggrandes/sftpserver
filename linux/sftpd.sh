@@ -5,8 +5,15 @@ SFTPD_CLASSPATH=$(echo $SFTPD_HOME/lib/*.jar | tr ' ' ':')
 SFTPD_POLICY="file:${SFTPD_HOME}/lib/sftpd.policy"
 ID=${2:-default}
 MAIN_CLASS="org.javastack.sftpserver.Server"
+PWD_CLASS="org.javastack.sftpserver.PasswordEncrypt"
 PIDFILE="${SFTPD_HOME}/pid/sftpd-${ID}.pid"
 #
+do_pwd () {
+  cd ${SFTPD_HOME}
+  ${JAVA_HOME}/bin/java \
+    -cp "${SFTPD_CLASSPATH}" \
+    ${PWD_CLASS}
+}
 do_start () {
   cd ${SFTPD_HOME}
   nohup ${JAVA_HOME}/bin/java -Dprogram.name=sftpd -Xmx64m \
@@ -63,7 +70,10 @@ case "$1" in
   status)
     do_status
   ;;
+  pwd)
+    do_pwd
+  ;;
   *)
-    echo "$0 <start|stop|restart|status> [id]"
+    echo "$0 <start|stop|restart|status|pwd> [id]"
   ;;
 esac
