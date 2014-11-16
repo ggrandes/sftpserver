@@ -47,9 +47,6 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 
 ---
 
-# TODOs
-
-* Publickey Authenticator
 
 # DONEs
 
@@ -58,6 +55,7 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 * Homes are chrooted
 * ReadOnly accounts
 * Encrypted Passwords (SHA2/MD5/APR1)
+* Publickey Authenticator
 
 ## MISC
 Current harcoded values:
