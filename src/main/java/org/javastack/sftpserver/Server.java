@@ -19,12 +19,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.security.PublicKey;
+import java.security.interfaces.DSAPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.xml.bind.DatatypeConverter;
+
+import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.Compression;
 import org.apache.sshd.common.Factory;
@@ -62,7 +69,7 @@ import org.slf4j.LoggerFactory;
  * @author Guillermo Grandes / guillermo.grandes[at]gmail.com
  */
 public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
-	public static final String VERSION = "1.0.4";
+	public static final String VERSION = "1.0.6";
 	public static final String CONFIG_FILE = "/sftpd.properties";
 	public static final String HOSTKEY_FILE_PEM = "keys/hostkey.pem";
 	public static final String HOSTKEY_FILE_SER = "keys/hostkey.ser";
@@ -105,7 +112,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 
 	protected void setupAuth() {
 		sshd.setPasswordAuthenticator(this);
-		sshd.setPublickeyAuthenticator(null);
+		sshd.setPublickeyAuthenticator(this);
 		sshd.setGSSAuthenticator(null);
 	}
 
@@ -211,6 +218,9 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	public boolean authenticate(final String username, final PublicKey key, final ServerSession session) {
 		LOG.info("Request auth (PublicKey) for username=" + username);
 		// File f = new File("/home/" + username + "/.ssh/authorized_keys");
+		if ((username != null) && (key != null)) {
+			return db.checkUserPublicKey(username, key);
+		}
 		return false;
 	}
 
@@ -226,6 +236,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		// User config
 		public static final String PROP_BASE_USERS = BASE + "." + "user";
 		public static final String PROP_PWD = "userpassword";
+		public static final String PROP_KEY = "userkey" + ".";
 		public static final String PROP_HOME = "homedirectory";
 		public static final String PROP_ENABLED = "enableflag"; // true / false
 		public static final String PROP_ENABLE_WRITE = "writepermission"; // true / false
@@ -259,7 +270,8 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		private final String getValue(final String user, final String key) {
 			if ((user == null) || (key == null))
 				return null;
-			return db.getProperty(PROP_BASE_USERS + "." + user + "." + key);
+			final String value = db.getProperty(PROP_BASE_USERS + "." + user + "." + key);
+			return ((value == null) ? null : value.trim());
 		}
 
 		public boolean isEnabledUser(final String user) {
@@ -296,6 +308,39 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 					} else {
 						LOG.warn(sb.toString());
 					}
+				} else {
+					LOG.error(sb.toString());
+				}
+			}
+			return authOk;
+		}
+
+		public boolean checkUserPublicKey(final String user, final PublicKey key) {
+			final String encodedKey = PublicKeyHelper.getEncodedPublicKey(key);
+			final StringBuilder sb = new StringBuilder(96);
+			boolean authOk = false;
+			sb.append("Request auth (PublicKey) for username=").append(user);
+			sb.append(" (").append(key.getAlgorithm()).append(")");
+			try {
+				if (!isEnabledUser(user)) {
+					sb.append(" (user disabled)");
+					return authOk;
+				}
+				for (int i = 1; i < 1024; i++) {
+					final String value = getValue(user, PROP_KEY + i);
+					if (value == null) {
+						if (i == 1)
+							sb.append(" (no publickey)");
+						break;
+					} else if (value.equals(encodedKey)) {
+						authOk = true;
+						break;
+					}
+				}
+			} finally {
+				sb.append(": ").append(authOk ? "OK" : "FAIL");
+				if (authOk) {
+					LOG.info(sb.toString());
 				} else {
 					LOG.error(sb.toString());
 				}
@@ -494,5 +539,68 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 				return;
 			super.createSymbolicLink(destination);
 		}
+	}
+
+	// =================== PublicKeyHelper
+
+	static class PublicKeyHelper {
+		private static final Charset US_ASCII = Charset.forName("US-ASCII");
+
+		public static String getEncodedPublicKey(final PublicKey pub) {
+			if (pub instanceof RSAPublicKey) {
+				return encodeRSAPublicKey((RSAPublicKey) pub);
+			}
+			if (pub instanceof DSAPublicKey) {
+				return encodeDSAPublicKey((DSAPublicKey) pub);
+			}
+			return null;
+		}
+
+		public static String encodeRSAPublicKey(final RSAPublicKey key) {
+			final BigInteger[] params = new BigInteger[] {
+					key.getPublicExponent(), key.getModulus()
+			};
+			return encodePublicKey(params, "ssh-rsa");
+		}
+
+		public static String encodeDSAPublicKey(final DSAPublicKey key) {
+			final BigInteger[] params = new BigInteger[] {
+					key.getParams().getP(), key.getParams().getQ(), key.getParams().getG(), key.getY()
+			};
+			return encodePublicKey(params, "ssh-dss");
+		}
+
+		private static final void encodeUInt32(final IoBuffer bab, final int value) {
+			bab.put((byte) ((value >> 24) & 0xFF));
+			bab.put((byte) ((value >> 16) & 0xFF));
+			bab.put((byte) ((value >> 8) & 0xFF));
+			bab.put((byte) (value & 0xFF));
+		}
+
+		private static String encodePublicKey(final BigInteger[] params, final String keyType) {
+			final IoBuffer bab = IoBuffer.allocate(256);
+			bab.setAutoExpand(true);
+			byte[] buf = null;
+			// encode the header "ssh-dss" / "ssh-rsa"
+			buf = keyType.getBytes(US_ASCII); // RFC-4253, pag.13
+			encodeUInt32(bab, buf.length);    // RFC-4251, pag.8 (string encoding)
+			for (final byte b : buf) {
+				bab.put(b);
+			}
+			// encode params
+			for (final BigInteger param : params) {
+				buf = param.toByteArray();
+				encodeUInt32(bab, buf.length);
+				for (final byte b : buf) {
+					bab.put(b);
+				}
+			}
+			bab.flip();
+			buf = new byte[bab.limit()];
+			System.arraycopy(bab.array(), 0, buf, 0, buf.length);
+			bab.free();
+			return keyType + " " + DatatypeConverter.printBase64Binary(buf);
+		}
+
 	}
 }

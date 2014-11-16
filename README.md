@@ -2,7 +2,7 @@
 
 SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Source Java project under Apache License v2.0
 
-### Current Stable Version is [1.0.5](https://maven-release.s3.amazonaws.com/release/org/javastack/sftpserver/1.0.5/sftpserver-1.0.5-bin.zip)
+### Current Stable Version is [1.0.6](https://maven-release.s3.amazonaws.com/release/org/javastack/sftpserver/1.0.6/sftpserver-1.0.6-bin.zip)
 
 ---
 
@@ -24,6 +24,9 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 	#
 	# Password for user
 	sftpserver.user.test.userpassword=clean-unencripted-password
+	# PublicKeys for user (OpenSSH format)
+	sftpserver.user.test.userkey.1=ssh-rsa AAAAB3NzaC1yc2EAAAADA...E7uQ==
+	sftpserver.user.test.userkey.2=ssh-dss AAAAB3NzaC1kc3MAAACBA...IwtA==
 	# Set user home directory (chrooted)
 	sftpserver.user.test.homedirectory=./home/test/
 	# Enable user (default: false)
