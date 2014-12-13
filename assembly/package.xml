@@ -10,62 +10,75 @@
 	</formats>
 	<includeBaseDirectory>false</includeBaseDirectory>
 	<fileSets>
+		<!-- Directories -->
 		<fileSet>
-			<directory>${project.basedir}/src/main/resources/</directory>
-			<outputDirectory>/lib/</outputDirectory>
-			<includes>
-				<include>sftpd.policy</include>
-			</includes>
+			<directory>${project.basedir}/assembly/empty/</directory>
+			<outputDirectory>/bin/</outputDirectory>
+			<directoryMode>0755</directoryMode>
 		</fileSet>
+		<fileSet>
+			<directory>${project.basedir}/assembly/empty/</directory>
+			<outputDirectory>/lib/</outputDirectory>
+			<directoryMode>0755</directoryMode>
+		</fileSet>
+		<fileSet>
+			<directory>${project.basedir}/assembly/empty/</directory>
+			<outputDirectory>/conf/</outputDirectory>
+			<directoryMode>0770</directoryMode>
+		</fileSet>
+		<fileSet>
+			<directory>${project.basedir}/assembly/empty/</directory>
+			<outputDirectory>/keys/</outputDirectory>
+			<directoryMode>0700</directoryMode>
+		</fileSet>
+		<fileSet>
+			<directory>${project.basedir}/assembly/empty/</directory>
+			<outputDirectory>/log/</outputDirectory>
+			<directoryMode>0775</directoryMode>
+		</fileSet>
+		<fileSet>
+			<directory>${project.basedir}/assembly/empty/</directory>
+			<outputDirectory>/home/</outputDirectory>
+			<directoryMode>0775</directoryMode>
+		</fileSet>
+		<fileSet>
+			<directory>${project.basedir}/assembly/empty/</directory>
+			<outputDirectory>/home/test/</outputDirectory>
+			<directoryMode>0770</directoryMode>
+		</fileSet>
+		<fileSet>
+			<directory>${project.basedir}/assembly/empty/</directory>
+			<outputDirectory>/conf/default/</outputDirectory>
+			<directoryMode>0770</directoryMode>
+		</fileSet>
+		<fileSet>
+			<directory>${project.basedir}/assembly/empty/</directory>
+			<outputDirectory>/pid/</outputDirectory>
+			<directoryMode>0770</directoryMode>
+		</fileSet>
+		<!-- Directories / Files -->
+		<fileSet>
+			<directory>${project.basedir}/sampleconf/</directory>
+			<outputDirectory>/conf/sampleconf/</outputDirectory>
+			<directoryMode>0770</directoryMode>
+			<fileMode>0660</fileMode>
+		</fileSet>
+		<!-- Files -->
 		<fileSet>
 			<directory>${project.basedir}/linux/</directory>
 			<outputDirectory>/bin/</outputDirectory>
 			<includes>
 				<include>sftpd.sh</include>
 			</includes>
-			<fileMode>0775</fileMode>
+			<fileMode>0755</fileMode>
 		</fileSet>
 		<fileSet>
-			<directory>${project.basedir}/sampleconf/</directory>
-			<outputDirectory>/conf/</outputDirectory>
+			<directory>${project.basedir}/src/main/resources/</directory>
+			<outputDirectory>/lib/</outputDirectory>
 			<includes>
-				<include>log4j.properties</include>
+				<include>sftpd.policy</include>
 			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>${project.basedir}/sampleconf/</directory>
-			<outputDirectory>/conf/default/</outputDirectory>
-			<includes>
-				<include>sftpd.properties</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>${project.basedir}/assembly/</directory>
-			<outputDirectory>/home/test/</outputDirectory>
-			<includes>
-				<include>safeToDelete.tmp</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>${project.basedir}/assembly/</directory>
-			<outputDirectory>/pid/</outputDirectory>
-			<includes>
-				<include>safeToDelete.tmp</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>${project.basedir}/assembly/</directory>
-			<outputDirectory>/keys/</outputDirectory>
-			<includes>
-				<include>safeToDelete.tmp</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>${project.basedir}/assembly/</directory>
-			<outputDirectory>/log/</outputDirectory>
-			<includes>
-				<include>safeToDelete.tmp</include>
-			</includes>
+			<fileMode>0644</fileMode>
 		</fileSet>
 		<fileSet>
 			<directory>${project.basedir}/</directory>
@@ -73,10 +86,12 @@
 			<includes>
 				<include>LICENSE</include>
 			</includes>
+			<fileMode>0644</fileMode>
 		</fileSet>
 	</fileSets>
 	<dependencySets>
 		<dependencySet>
+			<fileMode>0644</fileMode>
 			<outputDirectory>/lib/</outputDirectory>
 			<useProjectArtifact>true</useProjectArtifact>
 			<unpack>false</unpack>
