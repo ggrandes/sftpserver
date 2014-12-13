@@ -67,6 +67,13 @@
 				<include>safeToDelete.tmp</include>
 			</includes>
 		</fileSet>
+		<fileSet>
+			<directory>${project.basedir}/</directory>
+			<outputDirectory>/</outputDirectory>
+			<includes>
+				<include>LICENSE</include>
+			</includes>
+		</fileSet>
 	</fileSets>
 	<dependencySets>
 		<dependencySet>
