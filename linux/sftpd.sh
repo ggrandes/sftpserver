@@ -1,25 +1,39 @@
 #!/bin/bash
-JAVA_HOME=${JAVA_HOME:-/opt/java/java-current}
-SFTPD_HOME=${SFTPD_HOME:-/opt/sftpd}
-SFTPD_CLASSPATH=$(echo $SFTPD_HOME/lib/*.jar | tr ' ' ':')
-SFTPD_POLICY="file:${SFTPD_HOME}/lib/sftpd.policy"
 ID=${2:-default}
+SFTPD_HOME=${SFTPD_HOME:-/opt/sftpd}
+SFTPD_MEM_MB=${SFTPD_MEM_MB:-64}
+SFTPD_OPTS_DEF="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -showversion -XX:+PrintCommandLineFlags -XX:-PrintFlagsFinal"
+SFTPD_OPTS="${SFTPD_OPTS:-${SFTPD_OPTS_DEF}}"
+SFTPD_CLASSPATH=$(echo $SFTPD_HOME/lib/*.jar | tr ' ' ':')
+SFTPD_POLICY_1="${SFTPD_HOME}/conf/${ID}/sftpd.policy" # Custom
+SFTPD_POLICY_2="${SFTPD_HOME}/lib/sftpd.policy"        # Generic
 MAIN_CLASS="org.javastack.sftpserver.Server"
 PWD_CLASS="org.javastack.sftpserver.PasswordEncrypt"
 PIDFILE="${SFTPD_HOME}/pid/sftpd-${ID}.pid"
 #
+[ -r "$SFTPD_POLICY_2" ] && SFTPD_POLICY="$SFTPD_POLICY_2" # Generic
+[ -r "$SFTPD_POLICY_1" ] && SFTPD_POLICY="$SFTPD_POLICY_1" # Custom
+#
 do_pwd () {
   cd ${SFTPD_HOME}
-  ${JAVA_HOME}/bin/java \
+  java \
     -cp "${SFTPD_CLASSPATH}" \
     ${PWD_CLASS}
 }
+do_run () {
+  cd ${SFTPD_HOME}
+  exec java -Dprogram.name=sftpd ${SFTPD_OPTS} -Xmx${SFTPD_MEM_MB}m \
+    -Dsftp.id=$ID -Dsftp.home=$SFTPD_HOME -Dsftp.log=${SFTPD_LOG:-CONSOLE} \
+    -cp "${SFTPD_HOME}/conf/${ID}/:${SFTPD_HOME}/conf/:${SFTPD_CLASSPATH}" \
+    -Djava.security.manager -Djava.security.policy=file:${SFTPD_POLICY} \
+    ${MAIN_CLASS}
+}
 do_start () {
   cd ${SFTPD_HOME}
-  nohup ${JAVA_HOME}/bin/java -Dprogram.name=sftpd -Xmx64m \
-    -Dsftp.id=$ID -Dsftp.home=$SFTPD_HOME \
+  nohup java -Dprogram.name=sftpd ${SFTPD_OPTS} -Xmx${SFTPD_MEM_MB}m \
+    -Dsftp.id=$ID -Dsftp.home=$SFTPD_HOME -Dsftp.log=${SFTPD_LOG:-FILE} \
     -cp "${SFTPD_HOME}/conf/${ID}/:${SFTPD_HOME}/conf/:${SFTPD_CLASSPATH}" \
-    -Djava.security.manager -Djava.security.policy=${SFTPD_POLICY} \
+    -Djava.security.manager -Djava.security.policy=file:${SFTPD_POLICY} \
     ${MAIN_CLASS} 1>${SFTPD_HOME}/log/sftpd-${ID}.bootstrap 2>&1 &
   PID="$!"
   echo ${PID} >$PIDFILE
@@ -56,6 +70,9 @@ do_status () {
   fi
 }
 case "$1" in
+  run)
+    do_run
+  ;;
   start)
     do_stop
     do_start
@@ -74,6 +91,6 @@ case "$1" in
     do_pwd
   ;;
   *)
-    echo "$0 <start|stop|restart|status|pwd> [id]"
+    echo "$0 <run|start|stop|restart|status|pwd> [id]"
   ;;
 esac

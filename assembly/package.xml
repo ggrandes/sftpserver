@@ -13,86 +13,81 @@
 		<!-- Directories -->
 		<fileSet>
 			<directory>${project.basedir}/assembly/empty/</directory>
-			<outputDirectory>/bin/</outputDirectory>
+			<outputDirectory>bin/</outputDirectory>
 			<directoryMode>0755</directoryMode>
 		</fileSet>
 		<fileSet>
 			<directory>${project.basedir}/assembly/empty/</directory>
-			<outputDirectory>/lib/</outputDirectory>
-			<directoryMode>0755</directoryMode>
+			<outputDirectory>pid/</outputDirectory>
+			<directoryMode>2775</directoryMode>
 		</fileSet>
 		<fileSet>
 			<directory>${project.basedir}/assembly/empty/</directory>
-			<outputDirectory>/conf/</outputDirectory>
-			<directoryMode>0770</directoryMode>
+			<outputDirectory>log/</outputDirectory>
+			<directoryMode>2775</directoryMode>
 		</fileSet>
 		<fileSet>
 			<directory>${project.basedir}/assembly/empty/</directory>
-			<outputDirectory>/keys/</outputDirectory>
-			<directoryMode>0700</directoryMode>
+			<outputDirectory>keys/</outputDirectory>
+			<directoryMode>2770</directoryMode>
 		</fileSet>
 		<fileSet>
 			<directory>${project.basedir}/assembly/empty/</directory>
-			<outputDirectory>/log/</outputDirectory>
-			<directoryMode>0775</directoryMode>
+			<outputDirectory>home/</outputDirectory>
+			<directoryMode>2770</directoryMode>
 		</fileSet>
 		<fileSet>
 			<directory>${project.basedir}/assembly/empty/</directory>
-			<outputDirectory>/home/</outputDirectory>
-			<directoryMode>0775</directoryMode>
+			<outputDirectory>home/test/</outputDirectory>
+			<directoryMode>2770</directoryMode>
 		</fileSet>
 		<fileSet>
 			<directory>${project.basedir}/assembly/empty/</directory>
-			<outputDirectory>/home/test/</outputDirectory>
-			<directoryMode>0770</directoryMode>
+			<outputDirectory>conf/</outputDirectory>
+			<directoryMode>0750</directoryMode>
 		</fileSet>
 		<fileSet>
 			<directory>${project.basedir}/assembly/empty/</directory>
-			<outputDirectory>/conf/default/</outputDirectory>
-			<directoryMode>0770</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>${project.basedir}/assembly/empty/</directory>
-			<outputDirectory>/pid/</outputDirectory>
-			<directoryMode>0770</directoryMode>
+			<outputDirectory>conf/default/</outputDirectory>
+			<directoryMode>0750</directoryMode>
 		</fileSet>
 		<!-- Directories / Files -->
 		<fileSet>
 			<directory>${project.basedir}/sampleconf/</directory>
-			<outputDirectory>/conf/sampleconf/</outputDirectory>
-			<directoryMode>0770</directoryMode>
-			<fileMode>0660</fileMode>
+			<outputDirectory>conf/sampleconf/</outputDirectory>
+			<directoryMode>0750</directoryMode>
+			<fileMode>0640</fileMode>
 		</fileSet>
 		<!-- Files -->
 		<fileSet>
 			<directory>${project.basedir}/linux/</directory>
-			<outputDirectory>/bin/</outputDirectory>
+			<outputDirectory>bin/</outputDirectory>
+			<lineEnding>unix</lineEnding>
 			<includes>
 				<include>sftpd.sh</include>
+				<include>sftpd.conf</include>
 			</includes>
 			<fileMode>0755</fileMode>
 		</fileSet>
-		<fileSet>
-			<directory>${project.basedir}/src/main/resources/</directory>
-			<outputDirectory>/lib/</outputDirectory>
-			<includes>
-				<include>sftpd.policy</include>
-			</includes>
-			<fileMode>0644</fileMode>
-		</fileSet>
-		<fileSet>
-			<directory>${project.basedir}/</directory>
-			<outputDirectory>/</outputDirectory>
-			<includes>
-				<include>LICENSE</include>
-			</includes>
-			<fileMode>0644</fileMode>
-		</fileSet>
 	</fileSets>
+	<files>
+		<file>
+			<source>${project.basedir}/LICENSE</source>
+			<lineEnding>dos</lineEnding>
+			<fileMode>0644</fileMode>
+		</file>
+		<file>
+			<source>${project.basedir}/src/main/resources/sftpd.policy</source>
+			<outputDirectory>lib/</outputDirectory>
+			<lineEnding>dos</lineEnding>
+			<fileMode>0644</fileMode>
+		</file>
+	</files>
 	<dependencySets>
 		<dependencySet>
+			<directoryMode>0755</directoryMode>
 			<fileMode>0644</fileMode>
-			<outputDirectory>/lib/</outputDirectory>
+			<outputDirectory>lib/</outputDirectory>
 			<useProjectArtifact>true</useProjectArtifact>
 			<unpack>false</unpack>
 			<scope>runtime</scope>
