@@ -197,7 +197,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	}
 
 	public void stop() {
-		LOG.info("Stoping");
+		LOG.info("Stopping");
 		try {
 			sshd.stop();
 		} catch (InterruptedException e) {

@@ -42,7 +42,7 @@ do_start () {
 do_stop () {
   local PID="$(cat $PIDFILE 2>/dev/null)"
   if [ -f "/proc/${PID}/status" ]; then
-    echo -n "Stoping SFTPD ${ID} : "
+    echo -n "Stopping SFTPD ${ID} : "
     kill -TERM $PID
     local _cnt=0
     while [ -f "/proc/${PID}/status" ]; do {
@@ -56,7 +56,7 @@ do_stop () {
     } done
     echo " OK"
   else
-    echo Stoping SFTPD ${ID} : NOT FOUND
+    echo Stopping SFTPD ${ID} : NOT FOUND
   fi
   rm -f $PIDFILE 1>/dev/null 2>&1
 }
