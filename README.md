@@ -88,6 +88,7 @@ Current harcoded values:
 
 * Hostkeys are writed to: `hostkey.pem` or `hostkey.set` in `${sftp.home}/keys/` directory
 * SecurityManager/Policy File is in `conf/${ID}/sftpd.policy` (custom) or `lib/sftpd.policy` (generic)
+* Htpasswd File is in `conf/${ID}/htpasswd` (custom) or `conf/htpasswd` (generic)
 * Only SHA2-512, SHA2-256 and SHA1-160 are enabled for HMAC (MD5, MD5-96, SHA1-96 are disabled)
 
 ---
