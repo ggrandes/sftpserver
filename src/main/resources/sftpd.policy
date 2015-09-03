@@ -35,7 +35,7 @@ grant {
   permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
   //
   permission java.net.SocketPermission "localhost", "listen";
-  permission java.net.SocketPermission "*", "accept, connect, resolve";
+  permission java.net.SocketPermission "*", "accept, resolve";
   //
   permission java.io.FilePermission "${java.home}${/}-", "read";
   permission java.io.FilePermission "${java.io.tmpdir}${/}-", "read, write, delete";
