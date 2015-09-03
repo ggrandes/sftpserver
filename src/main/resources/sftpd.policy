@@ -17,6 +17,7 @@ grant {
   //
   permission java.util.PropertyPermission "org.apache.sshd.*", "read";
   permission java.util.PropertyPermission "log4j.*", "read";
+  permission java.util.PropertyPermission "slf4j.*", "read";
   //
   permission java.util.PropertyPermission "sftp.*", "read";
   permission java.util.PropertyPermission "sshd.*", "read";
