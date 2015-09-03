@@ -2,13 +2,13 @@
 
 SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Source Java project under Apache License v2.0
 
-### Current Stable Version is [1.0.8](https://maven-release.s3.amazonaws.com/release/org/javastack/sftpserver/1.0.8/sftpserver-1.0.8-bin.zip)
+### Current Stable Version is [1.0.9](https://maven-release.s3.amazonaws.com/release/org/javastack/sftpserver/1.0.9/sftpserver-1.0.9-bin.zip)
 
 ---
 
 ## Config:
 
-###### `${sftp.home}/conf/[id]/sftpd.properties`
+###### `${sftp.home}/conf/[id]/sftpd.properties` (all in one file)
 
 	#
 	## Global Options
@@ -35,6 +35,28 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 	sftpserver.user.test.writepermission=true
 	#
 
+###### `${sftp.home}/conf/[id]/sftpd.properties` + `${sftp.home}/conf/[id]/htpasswd`
+
+	#
+	## Global Options
+	#
+	# Listen on TCP port 22222
+	sftpserver.global.port=22222
+	# Enable compression (requires jzlib) (default: false)
+	sftpserver.global.compress=true
+	# Enable dummy shell (default: false)
+	sftpserver.global.dummyshell=true
+	#
+	## Configure htpasswd
+	#
+	# Enable htpasswd (default: false)
+	sftpserver.htpasswd.enableflag=true
+	# Set home directory for all users (chrooted)
+	sftpserver.htpasswd.homedirectory=./home/test/
+	# Enable write (default: false)
+	sftpserver.htpasswd.writepermission=true
+	#
+
 ---
 
 ## Running (Linux)
@@ -59,6 +81,7 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 * ReadOnly accounts
 * Encrypted Passwords (SHA2/MD5/APR1)
 * PublicKey Authenticator (OpenSSH keys RSA/DSA)
+* Support [htpasswd file](https://httpd.apache.org/docs/2.2/misc/password_encryptions.html) (APR1) 
 
 ## MISC
 Current harcoded values:

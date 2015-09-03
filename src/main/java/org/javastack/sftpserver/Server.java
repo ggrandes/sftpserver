@@ -14,9 +14,12 @@
  */
 package org.javastack.sftpserver;
 
+import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.math.BigInteger;
@@ -69,8 +72,9 @@ import org.slf4j.LoggerFactory;
  * @author Guillermo Grandes / guillermo.grandes[at]gmail.com
  */
 public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
-	public static final String VERSION = "1.0.8";
+	public static final String VERSION = "1.0.9";
 	public static final String CONFIG_FILE = "/sftpd.properties";
+	public static final String HTPASSWD_FILE = "/htpasswd";
 	public static final String HOSTKEY_FILE_PEM = "keys/hostkey.pem";
 	public static final String HOSTKEY_FILE_SER = "keys/hostkey.ser";
 
@@ -116,6 +120,45 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		sshd.setGSSAuthenticator(null);
 	}
 
+	protected void loadHtPasswd() throws IOException {
+		InputStream is = null;
+		BufferedReader r = null;
+		try {
+			final boolean htEnabled = Boolean.parseBoolean(db.getHtValue(Config.PROP_HT_ENABLED));
+			if (!htEnabled) {
+				return;
+			}
+			final String htHome = db.getHtValue(Config.PROP_HT_HOME);
+			final boolean htEnableWrite = Boolean.parseBoolean(db.getHtValue(Config.PROP_HT_ENABLE_WRITE));
+			is = getClass().getResourceAsStream(HTPASSWD_FILE);
+			r = new BufferedReader(new InputStreamReader(is));
+			if (is == null) {
+				LOG.error("htpasswd file " + HTPASSWD_FILE + " not found in classpath");
+				return;
+			}
+			String line = null;
+			int c = 0;
+			while ((line = r.readLine()) != null) {
+				if (line.startsWith("#"))
+					continue;
+				final String[] tok = line.split(":", 2);
+				if (tok.length != 2)
+					continue;
+				final String user = tok[0];
+				final String auth = tok[1];
+				db.setValue(user, Config.PROP_PWD, auth);
+				db.setValue(user, Config.PROP_HOME, htHome);
+				db.setValue(user, Config.PROP_ENABLED, htEnabled);
+				db.setValue(user, Config.PROP_ENABLE_WRITE, htEnableWrite);
+				c++;
+			}
+			LOG.info("htpasswd file loaded " + c + " lines");
+		} finally {
+			closeQuietly(r);
+			closeQuietly(is);
+		}
+	}
+
 	@SuppressWarnings("unchecked")
 	protected void setupCompress() {
 		// Compression is not enabled by default
@@ -129,8 +172,9 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 
 	protected Config loadConfig() {
 		final Properties db = new Properties();
+		InputStream is = null;
 		try {
-			final InputStream is = this.getClass().getResourceAsStream(CONFIG_FILE);
+			is = getClass().getResourceAsStream(CONFIG_FILE);
 			if (is == null) {
 				LOG.error("Config file " + CONFIG_FILE + " not found in classpath");
 			} else {
@@ -139,9 +183,20 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			}
 		} catch (IOException e) {
 			LOG.error("IOException " + e.toString(), e);
+		} finally {
+			closeQuietly(is);
 		}
 		return new Config(db);
 
+	}
+
+	private void closeQuietly(final Closeable c) {
+		if (c != null) {
+			try {
+				c.close();
+			} catch (Exception ign) {
+			}
+		}
 	}
 
 	private void hackVersion() {
@@ -182,6 +237,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 				setupCompress();
 			if (enableDummyShell)
 				setupDummyShell();
+			loadHtPasswd();
 			sshd.setPort(port);
 			LOG.info("Listen on port=" + port);
 			final Server thisServer = this;
@@ -233,6 +289,11 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		public static final String PROP_PORT = "port";
 		public static final String PROP_COMPRESS = "compress";
 		public static final String PROP_DUMMY_SHELL = "dummyshell";
+		// HtPasswd config
+		public static final String PROP_HTPASSWD = BASE + "." + "htpasswd";
+		public static final String PROP_HT_HOME = "homedirectory";
+		public static final String PROP_HT_ENABLED = "enableflag";
+		public static final String PROP_HT_ENABLE_WRITE = "writepermission"; // true / false
 		// User config
 		public static final String PROP_BASE_USERS = BASE + "." + "user";
 		public static final String PROP_PWD = "userpassword";
@@ -247,6 +308,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			this.db = db;
 		}
 
+		// Global config
 		public boolean enableCompress() {
 			return Boolean.parseBoolean(getValue(PROP_COMPRESS));
 		}
@@ -255,7 +317,6 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			return Boolean.parseBoolean(getValue(PROP_DUMMY_SHELL));
 		}
 
-		// Global config
 		public int getPort() {
 			return Integer.parseInt(getValue(PROP_PORT));
 		}
@@ -266,12 +327,24 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			return db.getProperty(PROP_GLOBAL + "." + key);
 		}
 
+		private final String getHtValue(final String key) {
+			if (key == null)
+				return null;
+			return db.getProperty(PROP_HTPASSWD + "." + key);
+		}
+
 		// User config
 		private final String getValue(final String user, final String key) {
 			if ((user == null) || (key == null))
 				return null;
 			final String value = db.getProperty(PROP_BASE_USERS + "." + user + "." + key);
 			return ((value == null) ? null : value.trim());
+		}
+
+		private final void setValue(final String user, final String key, final Object value) {
+			if ((user == null) || (key == null) || (value == null))
+				return;
+			db.setProperty(PROP_BASE_USERS + "." + user + "." + key, String.valueOf(value));
 		}
 
 		public boolean isEnabledUser(final String user) {
