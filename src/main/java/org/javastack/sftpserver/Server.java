@@ -21,48 +21,51 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.nio.file.FileSystem;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.PublicKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Properties;
 
 import javax.xml.bind.DatatypeConverter;
 
 import org.apache.mina.core.buffer.IoBuffer;
-import org.apache.sshd.SshServer;
-import org.apache.sshd.common.Compression;
 import org.apache.sshd.common.Factory;
-import org.apache.sshd.common.Mac;
 import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.common.Session;
-import org.apache.sshd.common.compression.CompressionDelayedZlib;
-import org.apache.sshd.common.compression.CompressionNone;
-import org.apache.sshd.common.compression.CompressionZlib;
+import org.apache.sshd.common.PropertyResolverUtils;
+import org.apache.sshd.common.channel.Channel;
+import org.apache.sshd.common.compression.BuiltinCompressions;
+import org.apache.sshd.common.compression.Compression;
 import org.apache.sshd.common.file.FileSystemFactory;
-import org.apache.sshd.common.file.FileSystemView;
-import org.apache.sshd.common.file.SshFile;
-import org.apache.sshd.common.file.nativefs.NativeFileSystemView;
-import org.apache.sshd.common.file.nativefs.NativeSshFile;
-import org.apache.sshd.common.mac.HMACSHA1;
-import org.apache.sshd.common.mac.HMACSHA256;
-import org.apache.sshd.common.mac.HMACSHA512;
+import org.apache.sshd.common.file.root.RootedFileSystemProvider;
+import org.apache.sshd.common.mac.BuiltinMacs;
+import org.apache.sshd.common.mac.Mac;
+import org.apache.sshd.common.session.Session;
+import org.apache.sshd.common.util.GenericUtils;
 import org.apache.sshd.common.util.SecurityUtils;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
-import org.apache.sshd.server.PasswordAuthenticator;
-import org.apache.sshd.server.PublickeyAuthenticator;
-import org.apache.sshd.server.command.ScpCommandFactory;
-import org.apache.sshd.server.keyprovider.PEMGeneratorHostKeyProvider;
+import org.apache.sshd.server.ServerFactoryManager;
+import org.apache.sshd.server.SshServer;
+import org.apache.sshd.server.auth.password.PasswordAuthenticator;
+import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
+import org.apache.sshd.server.channel.ChannelSessionFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
+import org.apache.sshd.server.scp.ScpCommandFactory;
 import org.apache.sshd.server.session.ServerSession;
-import org.apache.sshd.server.sftp.SftpSubsystem;
+import org.apache.sshd.server.subsystem.sftp.SftpEventListener;
+import org.apache.sshd.server.subsystem.sftp.SftpSubsystem;
+import org.apache.sshd.server.subsystem.sftp.SftpSubsystemFactory;
+import org.javastack.sftpserver.readonly.ReadOnlyRootedFileSystemProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,7 +75,6 @@ import org.slf4j.LoggerFactory;
  * @author Guillermo Grandes / guillermo.grandes[at]gmail.com
  */
 public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
-	public static final String VERSION = "1.0.9";
 	public static final String CONFIG_FILE = "/sftpd.properties";
 	public static final String HTPASSWD_FILE = "/htpasswd";
 	public static final String HOSTKEY_FILE_PEM = "keys/hostkey.pem";
@@ -81,6 +83,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	private static final Logger LOG = LoggerFactory.getLogger(Server.class);
 	private Config db;
 	private SshServer sshd;
+	private volatile boolean running = true;
 
 	public static void main(final String[] args) {
 		new Server().start();
@@ -88,11 +91,12 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 
 	@SuppressWarnings("unchecked")
 	protected void setupFactories() {
-		sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>> asList(new SftpSubsystem.Factory()));
+		sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>> asList(new CustomSftpSubsystemFactory()));
 		sshd.setMacFactories(Arrays.<NamedFactory<Mac>> asList( //
-				new HMACSHA512.Factory(), //
-				new HMACSHA256.Factory(), //
-				new HMACSHA1.Factory()));
+				BuiltinMacs.hmacsha512, //
+				BuiltinMacs.hmacsha256, //
+				BuiltinMacs.hmacsha1));
+		sshd.setChannelFactories(Arrays.<NamedFactory<Channel>> asList(ChannelSessionFactory.INSTANCE));
 	}
 
 	protected void setupDummyShell() {
@@ -101,9 +105,10 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 
 	protected void setupKeyPair() {
 		if (SecurityUtils.isBouncyCastleRegistered()) {
-			sshd.setKeyPairProvider(new PEMGeneratorHostKeyProvider(HOSTKEY_FILE_PEM));
+			sshd.setKeyPairProvider(SecurityUtils.createGeneratorHostKeyProvider(new File(HOSTKEY_FILE_PEM)
+					.toPath()));
 		} else {
-			sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(HOSTKEY_FILE_SER));
+			sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File(HOSTKEY_FILE_SER)));
 		}
 	}
 
@@ -165,9 +170,9 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		// You need download and compile:
 		// http://www.jcraft.com/jzlib/
 		sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>> asList( //
-				new CompressionNone.Factory(), //
-				new CompressionZlib.Factory(), //
-				new CompressionDelayedZlib.Factory()));
+				BuiltinCompressions.none, //
+				BuiltinCompressions.zlib, //
+				BuiltinCompressions.delayedZlib));
 	}
 
 	protected Config loadConfig() {
@@ -200,22 +205,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	}
 
 	private void hackVersion() {
-		// Use reflection to rewrite version info
-		try {
-			Class<?> c = sshd.getClass();
-			Field f = null;
-			while ((c != null) && (f == null)) {
-				try {
-					f = c.getDeclaredField("version");
-					f.setAccessible(true);
-					f.set(sshd, "SSHD");
-					break;
-				} catch (NoSuchFieldException e) {
-					c = c.getSuperclass();
-				}
-			}
-		} catch (Throwable t) {
-		}
+		PropertyResolverUtils.updateProperty(sshd, ServerFactoryManager.SERVER_IDENTIFICATION, "SSHD");
 	}
 
 	public void start() {
@@ -250,14 +240,26 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		} catch (Exception e) {
 			LOG.error("Exception " + e.toString(), e);
 		}
+		while (running) {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
 	}
 
 	public void stop() {
 		LOG.info("Stopping");
+		running = false;
 		try {
 			sshd.stop();
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
+		} catch (IOException e) {
+			try {
+				sshd.stop(true);
+			} catch (IOException ee) {
+				LOG.error("Failed to stop", ee);
+			}
 		}
 	}
 
@@ -482,7 +484,32 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		}
 	}
 
-	// =================== Extended NativeFileSystem
+	static class CustomSftpSubsystemFactory extends SftpSubsystemFactory {
+		@Override
+		public Command create() {
+			final SftpSubsystem subsystem = new SftpSubsystem(getExecutorService(), isShutdownOnExit(),
+					getUnsupportedAttributePolicy()) {
+				@Override
+				protected void setFileAttribute(final Path file, final String view, final String attribute,
+						final Object value, final LinkOption... options) throws IOException {
+					throw new UnsupportedOperationException("setFileAttribute Disabled");
+				}
+
+				@Override
+				protected void createLink(final int id, final String targetPath, final String linkPath,
+						final boolean symLink) throws IOException {
+					throw new UnsupportedOperationException("createLink Disabled");
+				}
+			};
+			final Collection<? extends SftpEventListener> listeners = getRegisteredListeners();
+			if (GenericUtils.size(listeners) > 0) {
+				for (final SftpEventListener l : listeners) {
+					subsystem.addSftpEventListener(l);
+				}
+			}
+			return subsystem;
+		}
+	}
 
 	static class SecureFileSystemFactory implements FileSystemFactory {
 		private final Config db;
@@ -492,125 +519,15 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		}
 
 		@Override
-		public FileSystemView createFileSystemView(final Session session) throws IOException {
+		public FileSystem createFileSystem(final Session session) throws IOException {
 			final String userName = session.getUsername();
 			final String home = db.getHome(userName);
 			if (home == null) {
 				throw new IOException("user home error");
 			}
-			return new SecureFileSystemView(home, userName, !db.hasWritePerm(userName));
-		}
-	}
-
-	static class SecureFileSystemView extends NativeFileSystemView {
-		private static final boolean caseInsensitive = false;
-		private final String rootDir;
-		private final String userName;
-		private final boolean isReadOnly;
-
-		public SecureFileSystemView(final String rootDir, final String userName, final boolean isReadOnly) {
-			super(userName, Collections.singletonMap("/", "/"), "/", File.pathSeparatorChar, caseInsensitive);
-			this.rootDir = SecureSshFile.normalizeSeparateChar(rootDir);
-			this.userName = userName;
-			this.isReadOnly = isReadOnly;
-		}
-
-		@Override
-		public FileSystemView getNormalizedView() {
-			return this;
-		}
-
-		@Override
-		public SshFile getFile(final String file) {
-			return getFile("/", file);
-		}
-
-		@Override
-		public SshFile getFile(final SshFile baseDir, final String file) {
-			return getFile(baseDir.getAbsolutePath(), file);
-		}
-
-		protected SshFile getFile(final String dir, final String file) {
-			final String physicalName = SecureSshFile.getPhysicalName(rootDir, dir, file, caseInsensitive);
-			final File fileObj = new File(physicalName);
-			return new SecureSshFile(this, file, fileObj, userName, isReadOnly);
-		}
-	}
-
-	static class SecureSshFile extends NativeSshFile {
-		final boolean isReadOnly;
-
-		public SecureSshFile(final SecureFileSystemView fileSystemView, final String fileName,
-				final File file, final String userName, final boolean isReadOnly) {
-			super(fileSystemView, fileName, file, userName);
-			this.isReadOnly = isReadOnly;
-		}
-
-		@Override
-		public boolean isRemovable() {
-			return isWritable();
-		}
-
-		@Override
-		public boolean isWritable() {
-			if (isReadOnly)
-				return false;
-			return super.isWritable();
-		}
-
-		@Override
-		public boolean mkdir() {
-			if (isReadOnly)
-				return false;
-			return super.mkdir();
-		}
-
-		@Override
-		public boolean delete() {
-			if (isReadOnly)
-				return false;
-			return super.delete();
-		}
-
-		@Override
-		public boolean create() throws IOException {
-			if (isReadOnly)
-				return false;
-			return super.create();
-		}
-
-		@Override
-		public void truncate() throws IOException {
-			if (isReadOnly)
-				return;
-		}
-
-		@Override
-		public boolean move(final SshFile destination) {
-			if (isReadOnly)
-				return false;
-			return super.move(destination);
-		}
-
-		@Override
-		public void setAttributes(final Map<Attribute, Object> attributes) throws IOException {
-			if (isReadOnly)
-				return;
-			super.setAttributes(attributes);
-		}
-
-		@Override
-		public void setAttribute(final Attribute attribute, final Object value) throws IOException {
-			if (isReadOnly)
-				return;
-			super.setAttribute(attribute, value);
-		}
-
-		@Override
-		public void createSymbolicLink(final SshFile destination) throws IOException {
-			if (isReadOnly)
-				return;
-			super.createSymbolicLink(destination);
+			final RootedFileSystemProvider rfsp = db.hasWritePerm(userName) ? new RootedFileSystemProvider()
+					: new ReadOnlyRootedFileSystemProvider();
+			return rfsp.newFileSystem(Paths.get(home), Collections.<String, Object> emptyMap());
 		}
 	}
 
