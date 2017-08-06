@@ -89,7 +89,6 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		new Server().start();
 	}
 
-	@SuppressWarnings("unchecked")
 	protected void setupFactories() {
 		sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>> asList(new CustomSftpSubsystemFactory()));
 		sshd.setMacFactories(Arrays.<NamedFactory<Mac>> asList( //
@@ -164,7 +163,6 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	protected void setupCompress() {
 		// Compression is not enabled by default
 		// You need download and compile:
