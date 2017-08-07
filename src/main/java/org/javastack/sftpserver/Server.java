@@ -90,12 +90,12 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	}
 
 	protected void setupFactories() {
-		sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>> asList(new CustomSftpSubsystemFactory()));
-		sshd.setMacFactories(Arrays.<NamedFactory<Mac>> asList( //
+		sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(new CustomSftpSubsystemFactory()));
+		sshd.setMacFactories(Arrays.<NamedFactory<Mac>>asList( //
 				BuiltinMacs.hmacsha512, //
 				BuiltinMacs.hmacsha256, //
 				BuiltinMacs.hmacsha1));
-		sshd.setChannelFactories(Arrays.<NamedFactory<Channel>> asList(ChannelSessionFactory.INSTANCE));
+		sshd.setChannelFactories(Arrays.<NamedFactory<Channel>>asList(ChannelSessionFactory.INSTANCE));
 	}
 
 	protected void setupDummyShell() {
@@ -104,8 +104,8 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 
 	protected void setupKeyPair() {
 		if (SecurityUtils.isBouncyCastleRegistered()) {
-			sshd.setKeyPairProvider(SecurityUtils.createGeneratorHostKeyProvider(new File(HOSTKEY_FILE_PEM)
-					.toPath()));
+			sshd.setKeyPairProvider(
+					SecurityUtils.createGeneratorHostKeyProvider(new File(HOSTKEY_FILE_PEM).toPath()));
 		} else {
 			sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File(HOSTKEY_FILE_SER)));
 		}
@@ -167,7 +167,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		// Compression is not enabled by default
 		// You need download and compile:
 		// http://www.jcraft.com/jzlib/
-		sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>> asList( //
+		sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>>asList( //
 				BuiltinCompressions.none, //
 				BuiltinCompressions.zlib, //
 				BuiltinCompressions.delayedZlib));
@@ -525,7 +525,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			}
 			final RootedFileSystemProvider rfsp = db.hasWritePerm(userName) ? new RootedFileSystemProvider()
 					: new ReadOnlyRootedFileSystemProvider();
-			return rfsp.newFileSystem(Paths.get(home), Collections.<String, Object> emptyMap());
+			return rfsp.newFileSystem(Paths.get(home), Collections.<String, Object>emptyMap());
 		}
 	}
 
