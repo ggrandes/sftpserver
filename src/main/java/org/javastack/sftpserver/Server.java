@@ -40,10 +40,12 @@ import javax.xml.bind.DatatypeConverter;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.NamedFactory;
+import org.apache.sshd.common.PropertyResolver;
 import org.apache.sshd.common.PropertyResolverUtils;
 import org.apache.sshd.common.channel.Channel;
 import org.apache.sshd.common.compression.BuiltinCompressions;
 import org.apache.sshd.common.compression.Compression;
+import org.apache.sshd.common.config.keys.KeyUtils;
 import org.apache.sshd.common.file.FileSystemFactory;
 import org.apache.sshd.common.file.root.RootedFileSystemProvider;
 import org.apache.sshd.common.mac.BuiltinMacs;
@@ -59,6 +61,7 @@ import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
 import org.apache.sshd.server.channel.ChannelSessionFactory;
+import org.apache.sshd.server.keyprovider.AbstractGeneratorHostKeyProvider;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.scp.ScpCommandFactory;
 import org.apache.sshd.server.session.ServerSession;
@@ -103,12 +106,14 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	}
 
 	protected void setupKeyPair() {
+		final AbstractGeneratorHostKeyProvider provider;
 		if (SecurityUtils.isBouncyCastleRegistered()) {
-			sshd.setKeyPairProvider(
-					SecurityUtils.createGeneratorHostKeyProvider(new File(HOSTKEY_FILE_PEM).toPath()));
+			provider = SecurityUtils.createGeneratorHostKeyProvider(new File(HOSTKEY_FILE_PEM).toPath());
 		} else {
-			sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File(HOSTKEY_FILE_SER)));
+			provider = new SimpleGeneratorHostKeyProvider(new File(HOSTKEY_FILE_SER));
 		}
+		provider.setAlgorithm(KeyUtils.RSA_ALGORITHM);
+		sshd.setKeyPairProvider(provider);
 	}
 
 	protected void setupScp() {
@@ -122,6 +127,10 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		sshd.setPasswordAuthenticator(this);
 		sshd.setPublickeyAuthenticator(this);
 		sshd.setGSSAuthenticator(null);
+	}
+
+	protected void setupSysprops() {
+		sshd.setParentPropertyResolver(PropertyResolver.EMPTY);
 	}
 
 	protected void loadHtPasswd() throws IOException {
@@ -216,6 +225,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	public void start() {
 		LOG.info("Starting");
 		db = loadConfig();
+		LOG.info("BouncyCastle enabled=" + SecurityUtils.isBouncyCastleRegistered());
 		sshd = SshServer.setUpDefaultServer();
 		LOG.info("SSHD " + sshd.getVersion());
 		hackVersion();
@@ -224,6 +234,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		setupKeyPair();
 		setupScp();
 		setupAuth();
+		setupSysprops();
 
 		try {
 			final int port = db.getPort();

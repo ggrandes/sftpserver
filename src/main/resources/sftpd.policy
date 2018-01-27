@@ -3,18 +3,20 @@
 //
 // This file contains a default set of security policies to be enforced by JVM
 //
-// $Id: sftpd.policy,v 1.01 2016/05/07 18:20:00 ggrandes Exp $
+// $Id: sftpd.policy,v 1.02 2018/01/27 00:46:00 ggrandes Exp $
 // ============================================================================
 //
 // Load with: -Djava.security.manager -Djava.security.policy=sftpd.policy
 //
 // Troubleshooting: -Djava.security.debug=access:failure 
 // http://docs.oracle.com/javase/1.5.0/docs/guide/plugin/developer_guide/debugger.html
+// https://docs.oracle.com/javase/7/docs/technotes/guides/security/permissions.html
 //
 grant {
   //
   permission java.util.logging.LoggingPermission "control";
   //
+  permission java.util.PropertyPermission "org.bouncycastle.*", "read";
   permission java.util.PropertyPermission "org.apache.sshd.*", "read";
   permission java.util.PropertyPermission "log4j.*", "read";
   permission java.util.PropertyPermission "slf4j.*", "read";
