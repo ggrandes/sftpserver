@@ -6,6 +6,14 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 
 ---
 
+### Versions
+
+| sftpserver | Java |
+| :--------- | :--- |
+| 1.0.x      | 1.6+ |
+| 1.1.x      | 1.6+ |
+| 1.2.x      | 1.7+ |
+
 ## Config:
 
 ###### `${sftp.home}/conf/[id]/sftpd.properties` (all in one file)
