@@ -93,7 +93,8 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	}
 
 	protected void setupFactories() {
-		sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(new CustomSftpSubsystemFactory()));
+		final CustomSftpSubsystemFactory sftpSubsys = new CustomSftpSubsystemFactory();
+		sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(sftpSubsys));
 		sshd.setMacFactories(Arrays.<NamedFactory<Mac>>asList( //
 				BuiltinMacs.hmacsha512, //
 				BuiltinMacs.hmacsha256, //
@@ -101,8 +102,8 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		sshd.setChannelFactories(Arrays.<NamedFactory<Channel>>asList(ChannelSessionFactory.INSTANCE));
 	}
 
-	protected void setupDummyShell() {
-		sshd.setShellFactory(new SecureShellFactory());
+	protected void setupDummyShell(final boolean enable) {
+		sshd.setShellFactory(enable ? new SecureShellFactory() : null);
 	}
 
 	protected void setupKeyPair() {
@@ -172,14 +173,19 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		}
 	}
 
-	protected void setupCompress() {
+	protected void setupCompress(final boolean enable) {
 		// Compression is not enabled by default
 		// You need download and compile:
 		// http://www.jcraft.com/jzlib/
-		sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>>asList( //
-				BuiltinCompressions.none, //
-				BuiltinCompressions.zlib, //
-				BuiltinCompressions.delayedZlib));
+		if (enable) {
+			sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>>asList( //
+					BuiltinCompressions.none, //
+					BuiltinCompressions.zlib, //
+					BuiltinCompressions.delayedZlib));
+		} else {
+			sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>>asList( //
+					BuiltinCompressions.none));
+		}
 	}
 
 	protected Config loadConfig() {
@@ -240,10 +246,8 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			final int port = db.getPort();
 			final boolean enableCompress = db.enableCompress();
 			final boolean enableDummyShell = db.enableDummyShell();
-			if (enableCompress)
-				setupCompress();
-			if (enableDummyShell)
-				setupDummyShell();
+			setupCompress(enableCompress);
+			setupDummyShell(enableDummyShell);
 			loadHtPasswd();
 			sshd.setPort(port);
 			LOG.info("Listen on port=" + port);
