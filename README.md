@@ -30,8 +30,10 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 	#
 	## Configure user "test"
 	#
-	# Password for user
-	sftpserver.user.test.userpassword=clean-unencripted-password
+	# Password for user (unencrypted-plain-text)
+	#sftpserver.user.test.userpassword=changeit
+	# Password for user (encrypted)
+	sftpserver.user.test.userpassword=$1$156RlTZJ$76bzjtXvDfgvouurtgEI10
 	# PublicKeys for user (OpenSSH format)
 	sftpserver.user.test.userkey.1=ssh-rsa AAAAB3NzaC1yc2EAAAADA...E7uQ==
 	sftpserver.user.test.userkey.2=ssh-dss AAAAB3NzaC1kc3MAAACBA...IwtA==
