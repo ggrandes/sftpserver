@@ -94,7 +94,7 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 * Support [htpasswd file](https://httpd.apache.org/docs/2.2/misc/password_encryptions.html) (APR1) 
 
 ## MISC
-Current harcoded values:
+Current hardcoded values:
 
 * Hostkeys are writed to: `hostkey.pem` or `hostkey.ser` in `${sftp.home}/keys/` directory
 * SecurityManager/Policy File is in `conf/${ID}/sftpd.policy` (custom) or `lib/sftpd.policy` (generic)
