@@ -4,7 +4,7 @@
 
 	<groupId>org.javastack</groupId>
 	<artifactId>sftpserver</artifactId>
-	<version>1.2.2</version>
+	<version>1.2.3</version>
 	<description>SFTP Server (SSH File Transfer Protocol)</description>
 
 	<properties>
