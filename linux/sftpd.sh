@@ -2,7 +2,7 @@
 ID=${2:-default}
 SFTPD_HOME=${SFTPD_HOME:-/opt/sftpd}
 SFTPD_MEM_MB=${SFTPD_MEM_MB:-64}
-SFTPD_OPTS_DEF="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -showversion -XX:+PrintCommandLineFlags -XX:-PrintFlagsFinal"
+SFTPD_OPTS_DEF="-verbose:gc -XX:+PrintGCDetails -showversion -XX:+PrintCommandLineFlags -XX:-PrintFlagsFinal"
 SFTPD_OPTS="${SFTPD_OPTS:-${SFTPD_OPTS_DEF}}"
 SFTPD_CLASSPATH=$(echo $SFTPD_HOME/lib/*.jar | tr ' ' ':')
 SFTPD_POLICY_1="${SFTPD_HOME}/conf/${ID}/sftpd.policy" # Custom
