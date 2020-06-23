@@ -77,6 +77,10 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 
     ./bin/sftpd.conf (you can copy to /etc/init/)
 
+## Systemd Service (Linux)
+
+    ./bin/sftpd.service (you can copy to /etc/systemd/system/)
+
 ## Generate Encrypted Password (Linux)
 
     ./bin/sftpd.sh <pwd>

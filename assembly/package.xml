@@ -66,6 +66,7 @@
 			<includes>
 				<include>sftpd.sh</include>
 				<include>sftpd.conf</include>
+				<include>sftpd.service</include>
 			</includes>
 			<fileMode>0755</fileMode>
 		</fileSet>

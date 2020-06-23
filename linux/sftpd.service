@@ -1,0 +1,28 @@
+# systemd: /etc/systemd/system/sftpd.service
+#
+# Reload this file:
+#   systemctl daemon-reload
+# Enable/Start/Stop/Status of Service:
+#   systemctl <enable|start|stop|status> sftpd.service
+# Console log:
+#   journalctl -u sftpd.service -f
+#
+[Unit]
+Description=Service for SFTP Server
+After=network.target
+
+[Service]
+StartLimitInterval=0
+Restart=always
+RestartSec=3
+#User=sftpd
+#Environment="SFTPD_MEM_MB=64"
+Environment="SFTPD_HOME=/opt/sftpd"
+ExecStart=-/usr/bin/env ${SFTPD_HOME}/bin/sftpd.sh run
+
+#Type=forking
+#ExecStart=-/usr/bin/env ${SFTPD_HOME}/bin/sftpd.sh start
+#ExecStop=-/usr/bin/env ${SFTPD_HOME}/bin/sftpd.sh stop
+
+[Install]
+WantedBy=multi-user.target
