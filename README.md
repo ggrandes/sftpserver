@@ -13,6 +13,7 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 | 1.0.x      | 1.6+ |
 | 1.1.x      | 1.6+ |
 | 1.2.x      | 1.7+ |
+| 1.3.x      | 1.8+ |
 
 ## Config:
 
@@ -95,7 +96,7 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 * ReadOnly accounts
 * Encrypted Passwords (SHA2/MD5/APR1)
 * PublicKey Authenticator (OpenSSH keys RSA/DSA)
-* Support [htpasswd file](https://httpd.apache.org/docs/2.2/misc/password_encryptions.html) (APR1) 
+* Support [htpasswd file](https://httpd.apache.org/docs/2.4/misc/password_encryptions.html) (APR1) 
 
 ## MISC
 Current hardcoded values:

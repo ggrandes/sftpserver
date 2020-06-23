@@ -52,7 +52,7 @@ import org.apache.sshd.common.mac.BuiltinMacs;
 import org.apache.sshd.common.mac.Mac;
 import org.apache.sshd.common.session.Session;
 import org.apache.sshd.common.util.GenericUtils;
-import org.apache.sshd.common.util.SecurityUtils;
+import org.apache.sshd.common.util.security.SecurityUtils;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
@@ -120,7 +120,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	protected void setupScp() {
 		sshd.setCommandFactory(new ScpCommandFactory());
 		sshd.setFileSystemFactory(new SecureFileSystemFactory(db));
-		sshd.setTcpipForwardingFilter(null);
+		sshd.setForwardingFilter(null);
 		sshd.setAgentFactory(null);
 	}
 
@@ -224,7 +224,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	private void setupMaxPacketLength() {
 		final int maxPacketLength = db.getMaxPacketLength();
 		if (maxPacketLength > 1) {
-			PropertyResolverUtils.updateProperty(sshd, SftpSubsystem.MAX_PACKET_LENGTH_PROP, maxPacketLength);
+			PropertyResolverUtils.updateProperty(sshd, SftpSubsystem.MAX_READDIR_DATA_SIZE_PROP, maxPacketLength);
 		}
 	}
 
@@ -521,7 +521,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		@Override
 		public Command create() {
 			final SftpSubsystem subsystem = new SftpSubsystem(getExecutorService(), isShutdownOnExit(),
-					getUnsupportedAttributePolicy()) {
+					getUnsupportedAttributePolicy(), getFileSystemAccessor(), getErrorStatusDataHandler()) {
 				@Override
 				protected void setFileAttribute(final Path file, final String view, final String attribute,
 						final Object value, final LinkOption... options) throws IOException {
