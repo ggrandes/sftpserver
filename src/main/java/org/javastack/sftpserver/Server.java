@@ -53,7 +53,7 @@ import org.apache.sshd.common.mac.Mac;
 import org.apache.sshd.common.session.Session;
 import org.apache.sshd.common.util.GenericUtils;
 import org.apache.sshd.common.util.security.SecurityUtils;
-import org.apache.sshd.server.Command;
+import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.ServerFactoryManager;
@@ -111,7 +111,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		if (SecurityUtils.isBouncyCastleRegistered()) {
 			provider = SecurityUtils.createGeneratorHostKeyProvider(new File(HOSTKEY_FILE_PEM).toPath());
 		} else {
-			provider = new SimpleGeneratorHostKeyProvider(new File(HOSTKEY_FILE_SER));
+			provider = new SimpleGeneratorHostKeyProvider(Paths.get(HOSTKEY_FILE_SER));
 		}
 		provider.setAlgorithm(KeyUtils.RSA_ALGORITHM);
 		sshd.setKeyPairProvider(provider);
@@ -520,7 +520,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	static class CustomSftpSubsystemFactory extends SftpSubsystemFactory {
 		@Override
 		public Command create() {
-			final SftpSubsystem subsystem = new SftpSubsystem(getExecutorService(), isShutdownOnExit(),
+			final SftpSubsystem subsystem = new SftpSubsystem(getExecutorService(), //
 					getUnsupportedAttributePolicy(), getFileSystemAccessor(), getErrorStatusDataHandler()) {
 				@Override
 				protected void setFileAttribute(final Path file, final String view, final String attribute,
