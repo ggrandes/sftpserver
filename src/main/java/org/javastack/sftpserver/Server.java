@@ -221,13 +221,6 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		PropertyResolverUtils.updateProperty(sshd, ServerFactoryManager.SERVER_IDENTIFICATION, "SSHD");
 	}
 
-	private void setupMaxPacketLength() {
-		final int maxPacketLength = db.getMaxPacketLength();
-		if (maxPacketLength > 1) {
-			PropertyResolverUtils.updateProperty(sshd, SftpSubsystem.MAX_READDIR_DATA_SIZE_PROP, maxPacketLength);
-		}
-	}
-
 	public void start() {
 		LOG.info("Starting");
 		db = loadConfig();
@@ -235,7 +228,6 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		sshd = SshServer.setUpDefaultServer();
 		LOG.info("SSHD " + sshd.getVersion());
 		hackVersion();
-		setupMaxPacketLength();
 		setupFactories();
 		setupKeyPair();
 		setupScp();
@@ -343,17 +335,6 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 
 		public int getPort() {
 			return Integer.parseInt(getValue(PROP_PORT));
-		}
-
-		public int getMaxPacketLength() {
-			final String v = getValue(PROP_MAX_PACKET_LENGTH);
-			if (v == null) {
-				// FIXME: Workaround for BUG in SSHD-CORE
-				// https://issues.apache.org/jira/browse/SSHD-725
-				// https://issues.apache.org/jira/browse/SSHD-728
-				return (64 * 1024); // 64KB
-			}
-			return Integer.parseInt(v);
 		}
 
 		private final String getValue(final String key) {
