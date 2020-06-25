@@ -27,47 +27,52 @@ import java.nio.file.FileSystem;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.PosixFilePermission;
+import java.security.Principal;
 import java.security.PublicKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.xml.bind.DatatypeConverter;
 
 import org.apache.mina.core.buffer.IoBuffer;
-import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.NamedFactory;
+import org.apache.sshd.common.NamedResource;
 import org.apache.sshd.common.PropertyResolver;
 import org.apache.sshd.common.PropertyResolverUtils;
-import org.apache.sshd.common.channel.Channel;
+import org.apache.sshd.common.cipher.BuiltinCiphers;
 import org.apache.sshd.common.compression.BuiltinCompressions;
 import org.apache.sshd.common.compression.Compression;
 import org.apache.sshd.common.config.keys.KeyUtils;
 import org.apache.sshd.common.file.FileSystemFactory;
 import org.apache.sshd.common.file.root.RootedFileSystemProvider;
+import org.apache.sshd.common.kex.BuiltinDHFactories;
 import org.apache.sshd.common.mac.BuiltinMacs;
-import org.apache.sshd.common.mac.Mac;
-import org.apache.sshd.common.session.Session;
-import org.apache.sshd.common.util.GenericUtils;
+import org.apache.sshd.common.session.SessionContext;
 import org.apache.sshd.common.util.security.SecurityUtils;
-import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.ServerFactoryManager;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
+import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.channel.ChannelSessionFactory;
+import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.keyprovider.AbstractGeneratorHostKeyProvider;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.scp.ScpCommandFactory;
 import org.apache.sshd.server.session.ServerSession;
-import org.apache.sshd.server.subsystem.sftp.SftpEventListener;
-import org.apache.sshd.server.subsystem.sftp.SftpSubsystem;
+import org.apache.sshd.server.shell.ShellFactory;
+import org.apache.sshd.server.subsystem.sftp.SftpFileSystemAccessor;
 import org.apache.sshd.server.subsystem.sftp.SftpSubsystemFactory;
+import org.apache.sshd.server.subsystem.sftp.SftpSubsystemProxy;
 import org.javastack.sftpserver.readonly.ReadOnlyRootedFileSystemProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,13 +98,11 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	}
 
 	protected void setupFactories() {
-		final CustomSftpSubsystemFactory sftpSubsys = new CustomSftpSubsystemFactory();
-		sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(sftpSubsys));
-		sshd.setMacFactories(Arrays.<NamedFactory<Mac>>asList( //
-				BuiltinMacs.hmacsha512, //
-				BuiltinMacs.hmacsha256, //
-				BuiltinMacs.hmacsha1));
-		sshd.setChannelFactories(Arrays.<NamedFactory<Channel>>asList(ChannelSessionFactory.INSTANCE));
+		final SftpSubsystemFactory sftpSubsys = new SftpSubsystemFactory.Builder()
+				.withFileSystemAccessor(new CustomSftpFileSystemAccessor()).build();
+		// org.apache.sshd.common.BaseBuilder
+		sshd.setSubsystemFactories(Collections.singletonList(sftpSubsys));
+		sshd.setChannelFactories(Collections.singletonList(ChannelSessionFactory.INSTANCE));
 	}
 
 	protected void setupDummyShell(final boolean enable) {
@@ -250,6 +253,12 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 				}
 			});
 			sshd.start();
+			LOG.info("KeyExchangeFactories(available): " + NamedResource.getNameList(BuiltinDHFactories.VALUES));
+			LOG.info("MacFactories(available): " + NamedResource.getNameList(BuiltinMacs.VALUES));
+			LOG.info("CipherFactories(available): " + NamedResource.getNameList(BuiltinCiphers.VALUES));
+			LOG.info("KeyExchangeFactories(enabled): " + NamedResource.getNameList(sshd.getKeyExchangeFactories()));
+			LOG.info("MacFactories(enabled): " + NamedResource.getNameList(sshd.getMacFactories()));
+			LOG.info("CipherFactories(enabled): " + NamedResource.getNameList(sshd.getCipherFactories()));
 		} catch (Exception e) {
 			LOG.error("Exception " + e.toString(), e);
 		}
@@ -461,9 +470,9 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		}
 	}
 
-	static class SecureShellFactory implements Factory<Command> {
+	static class SecureShellFactory implements ShellFactory {
 		@Override
-		public Command create() {
+		public Command createShell(final ChannelSession channel) throws IOException {
 			return new SecureShellCommand();
 		}
 	}
@@ -491,7 +500,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		}
 
 		@Override
-		public void start(final Environment env) throws IOException {
+		public void start(final ChannelSession channel, final Environment env) throws IOException {
 			if (err != null) {
 				err.write("shell not allowed\r\n".getBytes("ISO-8859-1"));
 				err.flush();
@@ -501,34 +510,51 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		}
 
 		@Override
-		public void destroy() {
+		public void destroy(final ChannelSession channel) {
 		}
 	}
 
-	static class CustomSftpSubsystemFactory extends SftpSubsystemFactory {
+	static class CustomSftpFileSystemAccessor implements SftpFileSystemAccessor {
 		@Override
-		public Command create() {
-			final SftpSubsystem subsystem = new SftpSubsystem(getExecutorService(), //
-					getUnsupportedAttributePolicy(), getFileSystemAccessor(), getErrorStatusDataHandler()) {
-				@Override
-				protected void setFileAttribute(final Path file, final String view, final String attribute,
-						final Object value, final LinkOption... options) throws IOException {
-					throw new UnsupportedOperationException("setFileAttribute Disabled");
-				}
+		public void setFileAttribute(final ServerSession session, final SftpSubsystemProxy subsystem, final Path file,
+				final String view, final String attribute, final Object value, final LinkOption... options)
+				throws IOException {
+			throw new UnsupportedOperationException("Attribute set not supported for " + file);
+		}
 
-				@Override
-				protected void createLink(final int id, final String targetPath, final String linkPath,
-						final boolean symLink) throws IOException {
-					throw new UnsupportedOperationException("createLink Disabled");
-				}
-			};
-			final Collection<? extends SftpEventListener> listeners = getRegisteredListeners();
-			if (GenericUtils.size(listeners) > 0) {
-				for (final SftpEventListener l : listeners) {
-					subsystem.addSftpEventListener(l);
-				}
-			}
-			return subsystem;
+		@Override
+		public void setFileOwner(final ServerSession session, final SftpSubsystemProxy subsystem, final Path file,
+				final Principal value, final LinkOption... options) throws IOException {
+			throw new UnsupportedOperationException("Owner set not supported for " + file);
+		}
+
+		@Override
+		public void setGroupOwner(final ServerSession session, final SftpSubsystemProxy subsystem, final Path file,
+				final Principal value, final LinkOption... options) throws IOException {
+			throw new UnsupportedOperationException("Group set not supported");
+		}
+
+		@Override
+		public void setFilePermissions(final ServerSession session, final SftpSubsystemProxy subsystem, final Path file,
+				final Set<PosixFilePermission> perms, final LinkOption... options) throws IOException {
+			throw new UnsupportedOperationException("Permissions set not supported");
+		}
+
+		@Override
+		public void setFileAccessControl(final ServerSession session, final SftpSubsystemProxy subsystem,
+				final Path file, final List<AclEntry> acl, final LinkOption... options) throws IOException {
+			throw new UnsupportedOperationException("ACL set not supported");
+		}
+
+		@Override
+		public void createLink(final ServerSession session, final SftpSubsystemProxy subsystem, final Path link,
+				final Path existing, final boolean symLink) throws IOException {
+			throw new UnsupportedOperationException("Link not supported");
+		}
+
+		@Override
+		public String toString() {
+			return SftpFileSystemAccessor.class.getSimpleName() + "[CUSTOM]";
 		}
 	}
 
@@ -540,7 +566,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		}
 
 		@Override
-		public FileSystem createFileSystem(final Session session) throws IOException {
+		public FileSystem createFileSystem(final SessionContext session) throws IOException {
 			final String userName = session.getUsername();
 			final String home = db.getHome(userName);
 			if (home == null) {
@@ -549,6 +575,16 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			final RootedFileSystemProvider rfsp = db.hasWritePerm(userName) ? new RootedFileSystemProvider()
 					: new ReadOnlyRootedFileSystemProvider();
 			return rfsp.newFileSystem(Paths.get(home), Collections.<String, Object>emptyMap());
+		}
+
+		@Override
+		public Path getUserHomeDir(final SessionContext session) throws IOException {
+			final String userName = session.getUsername();
+			final String home = db.getHome(userName);
+			if (home == null) {
+				throw new IOException("user home error");
+			}
+			return Paths.get(home);
 		}
 	}
 

@@ -104,16 +104,17 @@ Current hardcoded values:
 * Hostkeys are writed to: `hostkey.pem` or `hostkey.ser` in `${sftp.home}/keys/` directory
 * SecurityManager/Policy File is in `conf/${ID}/sftpd.policy` (custom) or `lib/sftpd.policy` (generic)
 * Htpasswd File is in `conf/${ID}/htpasswd` (custom) or `conf/htpasswd` (generic)
-* Only SHA2-512, SHA2-256 and SHA1-160 are enabled for HMAC (MD5, MD5-96, SHA1-96 are disabled)
 
 ---
 
 Maven Dependencies:
 
-[Apache MINA SSHD](http://mina.apache.org/sshd-project/)
+[Apache MINA SSHD](http://mina.apache.org/sshd-project/) [CHANGELOG](https://github.com/apache/mina-sshd/tree/master/docs/changes/)
 
 * mina-core-`XXX`.jar
 * sshd-core-`XXX`.jar
+* sshd-sftp-`XXX`.jar
+* sshd-scp-`XXX`.jar
 
 [Apache Commons Codec (password encryption)](http://commons.apache.org/codec/)
 
