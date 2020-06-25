@@ -42,6 +42,7 @@ import org.apache.sshd.common.PropertyResolverUtils;
 import org.apache.sshd.common.cipher.BuiltinCiphers;
 import org.apache.sshd.common.compression.BuiltinCompressions;
 import org.apache.sshd.common.compression.Compression;
+import org.apache.sshd.common.config.SshConfigFileReader;
 import org.apache.sshd.common.config.keys.KeyUtils;
 import org.apache.sshd.common.config.keys.PublicKeyEntry;
 import org.apache.sshd.common.file.FileSystemFactory;
@@ -52,6 +53,7 @@ import org.apache.sshd.common.session.SessionContext;
 import org.apache.sshd.common.util.security.SecurityUtils;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
+import org.apache.sshd.server.ServerBuilder;
 import org.apache.sshd.server.ServerFactoryManager;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
@@ -97,6 +99,30 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		// org.apache.sshd.common.BaseBuilder
 		sshd.setSubsystemFactories(Collections.singletonList(sftpSubsys));
 		sshd.setChannelFactories(Collections.singletonList(ChannelSessionFactory.INSTANCE));
+		// NOTE: Not all of these are supported by sshd-core
+		// man 5 sshd_config : Ciphers
+		// org.apache.sshd.common.config.ConfigFileReaderSupport.DEFAULT_CIPHERS
+		SshConfigFileReader.configureCiphers(sshd, //
+				"chacha20-poly1305@openssh.com," + //
+						"aes128-ctr,aes192-ctr,aes256-ctr," + //
+						"aes128-gcm@openssh.com,aes256-gcm@openssh.com", //
+				true, true);
+		// man 5 sshd_config : KexAlgorithms
+		// org.apache.sshd.common.config.ConfigFileReaderSupport.DEFAULT_KEX_ALGORITHMS
+		SshConfigFileReader.configureKeyExchanges(sshd, //
+				"curve25519-sha256,curve25519-sha256@libssh.org," + //
+						"ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521," + //
+						"diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha1", //
+				true, ServerBuilder.DH2KEX, true);
+		// man 5 sshd_config : MACs
+		// org.apache.sshd.common.config.ConfigFileReaderSupport.DEFAULT_MACS
+		SshConfigFileReader.configureMacs(sshd, //
+				"umac-64-etm@openssh.com,umac-128-etm@openssh.com," + //
+						"hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com," + //
+						"hmac-sha1-etm@openssh.com," + //
+						"umac-64@openssh.com,umac-128@openssh.com," + //
+						"hmac-sha2-256,hmac-sha2-512,hmac-sha1", //
+				true, true);
 	}
 
 	protected void setupDummyShell(final boolean enable) {
