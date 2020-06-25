@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.math.BigInteger;
-import java.nio.charset.Charset;
 import java.nio.file.FileSystem;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -31,17 +29,12 @@ import java.nio.file.attribute.AclEntry;
 import java.nio.file.attribute.PosixFilePermission;
 import java.security.Principal;
 import java.security.PublicKey;
-import java.security.interfaces.DSAPublicKey;
-import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.xml.bind.DatatypeConverter;
-
-import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.NamedResource;
 import org.apache.sshd.common.PropertyResolver;
@@ -50,6 +43,7 @@ import org.apache.sshd.common.cipher.BuiltinCiphers;
 import org.apache.sshd.common.compression.BuiltinCompressions;
 import org.apache.sshd.common.compression.Compression;
 import org.apache.sshd.common.config.keys.KeyUtils;
+import org.apache.sshd.common.config.keys.PublicKeyEntry;
 import org.apache.sshd.common.file.FileSystemFactory;
 import org.apache.sshd.common.file.root.RootedFileSystemProvider;
 import org.apache.sshd.common.kex.BuiltinDHFactories;
@@ -414,7 +408,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		}
 
 		public boolean checkUserPublicKey(final String user, final PublicKey key) {
-			final String encodedKey = PublicKeyHelper.getEncodedPublicKey(key);
+			final String encodedKey = PublicKeyEntry.toString(key);
 			final StringBuilder sb = new StringBuilder(96);
 			boolean authOk = false;
 			sb.append("Request auth (PublicKey) for username=").append(user);
@@ -586,68 +580,5 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			}
 			return Paths.get(home);
 		}
-	}
-
-	// =================== PublicKeyHelper
-
-	static class PublicKeyHelper {
-		private static final Charset US_ASCII = Charset.forName("US-ASCII");
-
-		public static String getEncodedPublicKey(final PublicKey pub) {
-			if (pub instanceof RSAPublicKey) {
-				return encodeRSAPublicKey((RSAPublicKey) pub);
-			}
-			if (pub instanceof DSAPublicKey) {
-				return encodeDSAPublicKey((DSAPublicKey) pub);
-			}
-			return null;
-		}
-
-		public static String encodeRSAPublicKey(final RSAPublicKey key) {
-			final BigInteger[] params = new BigInteger[] {
-					key.getPublicExponent(), key.getModulus()
-			};
-			return encodePublicKey(params, "ssh-rsa");
-		}
-
-		public static String encodeDSAPublicKey(final DSAPublicKey key) {
-			final BigInteger[] params = new BigInteger[] {
-					key.getParams().getP(), key.getParams().getQ(), key.getParams().getG(), key.getY()
-			};
-			return encodePublicKey(params, "ssh-dss");
-		}
-
-		private static final void encodeUInt32(final IoBuffer bab, final int value) {
-			bab.put((byte) ((value >> 24) & 0xFF));
-			bab.put((byte) ((value >> 16) & 0xFF));
-			bab.put((byte) ((value >> 8) & 0xFF));
-			bab.put((byte) (value & 0xFF));
-		}
-
-		private static String encodePublicKey(final BigInteger[] params, final String keyType) {
-			final IoBuffer bab = IoBuffer.allocate(256);
-			bab.setAutoExpand(true);
-			byte[] buf = null;
-			// encode the header "ssh-dss" / "ssh-rsa"
-			buf = keyType.getBytes(US_ASCII); // RFC-4253, pag.13
-			encodeUInt32(bab, buf.length);    // RFC-4251, pag.8 (string encoding)
-			for (final byte b : buf) {
-				bab.put(b);
-			}
-			// encode params
-			for (final BigInteger param : params) {
-				buf = param.toByteArray();
-				encodeUInt32(bab, buf.length);
-				for (final byte b : buf) {
-					bab.put(b);
-				}
-			}
-			bab.flip();
-			buf = new byte[bab.limit()];
-			System.arraycopy(bab.array(), 0, buf, 0, buf.length);
-			bab.free();
-			return keyType + " " + DatatypeConverter.printBase64Binary(buf);
-		}
-
 	}
 }

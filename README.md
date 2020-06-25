@@ -95,7 +95,7 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 * Homes are chrooted
 * ReadOnly accounts
 * Encrypted Passwords (SHA2/MD5/APR1)
-* PublicKey Authenticator (OpenSSH keys RSA/DSA)
+* PublicKey Authenticator (OpenSSH keys RSA/EcDSA/Ed25519)
 * Support [htpasswd file](https://httpd.apache.org/docs/2.4/misc/password_encryptions.html) (APR1) 
 
 ## MISC
