@@ -109,7 +109,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	protected void setupKeyPair() {
 		final AbstractGeneratorHostKeyProvider provider;
 		if (SecurityUtils.isBouncyCastleRegistered()) {
-			provider = SecurityUtils.createGeneratorHostKeyProvider(new File(HOSTKEY_FILE_PEM).toPath());
+			provider = SecurityUtils.createGeneratorHostKeyProvider(Paths.get(HOSTKEY_FILE_PEM));
 		} else {
 			provider = new SimpleGeneratorHostKeyProvider(Paths.get(HOSTKEY_FILE_SER));
 		}
@@ -421,9 +421,16 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 						if (i == 1)
 							sb.append(" (no publickey)");
 						break;
-					} else if (value.equals(encodedKey)) {
-						authOk = true;
-						break;
+					} else {
+						// Strip comment in keys
+						// ssh-rsa AAAAB3NzaC1y...E7uQ== root@host
+						final int s1 = value.indexOf(' ', 0);
+						final int s2 = value.indexOf(' ', s1 + 1);
+						final String ukey = (s2 > s1 ? value.substring(0, s2) : value);
+						if (ukey.equals(encodedKey)) {
+							authOk = true;
+							break;
+						}
 					}
 				}
 			} finally {
