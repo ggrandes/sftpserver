@@ -37,7 +37,8 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 	sftpserver.user.test.userpassword=$1$156RlTZJ$76bzjtXvDfgvouurtgEI10
 	# PublicKeys for user (OpenSSH format)
 	sftpserver.user.test.userkey.1=ssh-rsa AAAAB3NzaC1yc2EAAAADA...E7uQ==
-	sftpserver.user.test.userkey.2=ssh-dss AAAAB3NzaC1kc3MAAACBA...IwtA==
+	sftpserver.user.test.userkey.2=ssh-ed25519 AAAAC3NzaC1...QfX
+	sftpserver.user.test.userkey.3=ecdsa-sha2-nistp256 AAAAE2VjZ...Z99xM=
 	# Set user home directory (chrooted)
 	sftpserver.user.test.homedirectory=./home/test/
 	# Enable user (default: false)
