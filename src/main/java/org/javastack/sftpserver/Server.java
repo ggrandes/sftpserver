@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.NamedResource;
@@ -50,6 +51,7 @@ import org.apache.sshd.common.file.root.RootedFileSystemProvider;
 import org.apache.sshd.common.kex.BuiltinDHFactories;
 import org.apache.sshd.common.mac.BuiltinMacs;
 import org.apache.sshd.common.session.SessionContext;
+import org.apache.sshd.common.session.SessionHeartbeatController.HeartbeatType;
 import org.apache.sshd.common.util.security.SecurityUtils;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
@@ -145,6 +147,12 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		sshd.setFileSystemFactory(new SecureFileSystemFactory(db));
 		sshd.setForwardingFilter(null);
 		sshd.setAgentFactory(null);
+		final int hb = db.getHeartbeat();
+		if (hb <= 0) {
+			sshd.disableSessionHeartbeat();
+		} else {
+			sshd.setSessionHeartbeat(HeartbeatType.IGNORE, TimeUnit.SECONDS, hb);
+		}
 	}
 
 	protected void setupAuth() {
@@ -327,13 +335,14 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	// =================== Helper Classes
 
 	static class Config {
+		public static final int DEFAULT_HEARTBEAT = 0;
 		// Global config
 		public static final String BASE = "sftpserver";
 		public static final String PROP_GLOBAL = BASE + "." + "global";
 		public static final String PROP_PORT = "port";
 		public static final String PROP_COMPRESS = "compress";
 		public static final String PROP_DUMMY_SHELL = "dummyshell";
-		public static final String PROP_MAX_PACKET_LENGTH = "maxPacketLength";
+		public static final String PROP_HEARTBEAT = "heartbeat";
 		// HtPasswd config
 		public static final String PROP_HTPASSWD = BASE + "." + "htpasswd";
 		public static final String PROP_HT_HOME = "homedirectory";
@@ -376,6 +385,18 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			if (key == null)
 				return null;
 			return db.getProperty(PROP_HTPASSWD + "." + key);
+		}
+
+		public int getHeartbeat() {
+			int hb = DEFAULT_HEARTBEAT;
+			try {
+				hb = Integer.parseInt(getValue(PROP_HEARTBEAT));
+				if (hb < 0) {
+					hb = DEFAULT_HEARTBEAT;
+				}
+			} catch (Exception ign) {
+			}
+			return hb;
 		}
 
 		// User config
