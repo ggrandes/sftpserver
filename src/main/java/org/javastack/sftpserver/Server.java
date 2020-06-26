@@ -105,25 +105,17 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		// man 5 sshd_config : Ciphers
 		// org.apache.sshd.common.config.ConfigFileReaderSupport.DEFAULT_CIPHERS
 		SshConfigFileReader.configureCiphers(sshd, //
-				"chacha20-poly1305@openssh.com," + //
-						"aes128-ctr,aes192-ctr,aes256-ctr," + //
-						"aes128-gcm@openssh.com,aes256-gcm@openssh.com", //
+				db.getCiphers(), //
 				true, true);
 		// man 5 sshd_config : KexAlgorithms
 		// org.apache.sshd.common.config.ConfigFileReaderSupport.DEFAULT_KEX_ALGORITHMS
 		SshConfigFileReader.configureKeyExchanges(sshd, //
-				"curve25519-sha256,curve25519-sha256@libssh.org," + //
-						"ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521," + //
-						"diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha1", //
+				db.getKexAlgorithms(), //
 				true, ServerBuilder.DH2KEX, true);
 		// man 5 sshd_config : MACs
 		// org.apache.sshd.common.config.ConfigFileReaderSupport.DEFAULT_MACS
 		SshConfigFileReader.configureMacs(sshd, //
-				"umac-64-etm@openssh.com,umac-128-etm@openssh.com," + //
-						"hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com," + //
-						"hmac-sha1-etm@openssh.com," + //
-						"umac-64@openssh.com,umac-128@openssh.com," + //
-						"hmac-sha2-256,hmac-sha2-512,hmac-sha1", //
+				db.getMacs(), //
 				true, true);
 	}
 
@@ -281,12 +273,12 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 				}
 			});
 			sshd.start();
-			LOG.info("KeyExchangeFactories(available): " + NamedResource.getNameList(BuiltinDHFactories.VALUES));
-			LOG.info("MacFactories(available): " + NamedResource.getNameList(BuiltinMacs.VALUES));
-			LOG.info("CipherFactories(available): " + NamedResource.getNameList(BuiltinCiphers.VALUES));
-			LOG.info("KeyExchangeFactories(enabled): " + NamedResource.getNameList(sshd.getKeyExchangeFactories()));
-			LOG.info("MacFactories(enabled): " + NamedResource.getNameList(sshd.getMacFactories()));
-			LOG.info("CipherFactories(enabled): " + NamedResource.getNameList(sshd.getCipherFactories()));
+			LOG.info("KexAlgorithms(available): " + NamedResource.getNameList(BuiltinDHFactories.VALUES));
+			LOG.info("Ciphers(available): " + NamedResource.getNameList(BuiltinCiphers.VALUES));
+			LOG.info("Macs(available): " + NamedResource.getNameList(BuiltinMacs.VALUES));
+			LOG.info("KexAlgorithms(enabled): " + NamedResource.getNameList(sshd.getKeyExchangeFactories()));
+			LOG.info("Ciphers(enabled): " + NamedResource.getNameList(sshd.getCipherFactories()));
+			LOG.info("Macs(enabled): " + NamedResource.getNameList(sshd.getMacFactories()));
 		} catch (Exception e) {
 			LOG.error("Exception " + e.toString(), e);
 		}
@@ -335,6 +327,17 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	// =================== Helper Classes
 
 	static class Config {
+		public static final String DEFAULT_KEX_ALGORITHMS = "curve25519-sha256,curve25519-sha256@libssh.org," + //
+				"ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521," + //
+				"diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha1";
+		public static final String DEFAULT_CIPHERS = "chacha20-poly1305@openssh.com," + //
+				"aes128-ctr,aes192-ctr,aes256-ctr," + //
+				"aes128-gcm@openssh.com,aes256-gcm@openssh.com";
+		public static final String DEFAULT_MACS = "umac-64-etm@openssh.com,umac-128-etm@openssh.com," + //
+				"hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com," + //
+				"hmac-sha1-etm@openssh.com," + //
+				"umac-64@openssh.com,umac-128@openssh.com," + //
+				"hmac-sha2-256,hmac-sha2-512,hmac-sha1";
 		public static final int DEFAULT_HEARTBEAT = 0;
 		// Global config
 		public static final String BASE = "sftpserver";
@@ -343,6 +346,9 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		public static final String PROP_COMPRESS = "compress";
 		public static final String PROP_DUMMY_SHELL = "dummyshell";
 		public static final String PROP_HEARTBEAT = "heartbeat";
+		public static final String PROP_KEX_ALGORITHMS = "kexalgorithms";
+		public static final String PROP_CIPHERS = "ciphers";
+		public static final String PROP_MACS = "macs";
 		// HtPasswd config
 		public static final String PROP_HTPASSWD = BASE + "." + "htpasswd";
 		public static final String PROP_HT_HOME = "homedirectory";
@@ -397,6 +403,30 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			} catch (Exception ign) {
 			}
 			return hb;
+		}
+		
+		public String getKexAlgorithms() {
+			final String value = getValue(PROP_KEX_ALGORITHMS);
+			if (value == null) {
+				return DEFAULT_KEX_ALGORITHMS;
+			}
+			return value;
+		}
+		
+		public String getCiphers() {
+			final String value = getValue(PROP_CIPHERS);
+			if (value == null) {
+				return DEFAULT_CIPHERS;
+			}
+			return value;
+		}
+		
+		public String getMacs() {
+			final String value = getValue(PROP_MACS);
+			if (value == null) {
+				return DEFAULT_MACS;
+			}
+			return value;
 		}
 
 		// User config

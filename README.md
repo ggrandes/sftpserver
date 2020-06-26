@@ -105,9 +105,9 @@ Current hardcoded values:
 * Hostkeys are writed to: `hostkey.pem` or `hostkey.ser` in `${sftp.home}/keys/` directory
 * SecurityManager/Policy File is in `conf/${ID}/sftpd.policy` (custom) or `lib/sftpd.policy` (generic)
 * Htpasswd File is in `conf/${ID}/htpasswd` (custom) or `conf/htpasswd` (generic)
-* KeyExchange: `ecdh-sha2-nistp256, ecdh-sha2-nistp384, ecdh-sha2-nistp521, diffie-hellman-group-exchange-sha256, diffie-hellman-group14-sha1`
-* Mac: `hmac-sha2-256-etm@openssh.com, hmac-sha2-512-etm@openssh.com, hmac-sha1-etm@openssh.com, hmac-sha2-256, hmac-sha2-512, hmac-sha1`
-* Ciphers: `aes128-ctr, aes192-ctr, aes256-ctr`
+* Default KexAlgorithms: `ecdh-sha2-nistp256, ecdh-sha2-nistp384, ecdh-sha2-nistp521, diffie-hellman-group-exchange-sha256, diffie-hellman-group14-sha1`
+* Default Ciphers: `aes128-ctr, aes192-ctr, aes256-ctr`
+* Default MACs: `hmac-sha2-256-etm@openssh.com, hmac-sha2-512-etm@openssh.com, hmac-sha1-etm@openssh.com, hmac-sha2-256, hmac-sha2-512, hmac-sha1`
 
 ---
 
