@@ -258,14 +258,16 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		setupSysprops();
 
 		try {
+			final String host = db.getHost();
 			final int port = db.getPort();
 			final boolean enableCompress = db.enableCompress();
 			final boolean enableDummyShell = db.enableDummyShell();
 			setupCompress(enableCompress);
 			setupDummyShell(enableDummyShell);
 			loadHtPasswd();
+			sshd.setHost(host);
 			sshd.setPort(port);
-			LOG.info("Listen on port=" + port);
+			LOG.info("Listen on host=" + host + " port=" + port);
 			final Server thisServer = this;
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 				public void run() {
@@ -342,6 +344,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		// Global config
 		public static final String BASE = "sftpserver";
 		public static final String PROP_GLOBAL = BASE + "." + "global";
+		public static final String PROP_HOST = "host";
 		public static final String PROP_PORT = "port";
 		public static final String PROP_COMPRESS = "compress";
 		public static final String PROP_DUMMY_SHELL = "dummyshell";
@@ -375,6 +378,14 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 
 		public boolean enableDummyShell() {
 			return Boolean.parseBoolean(getValue(PROP_DUMMY_SHELL));
+		}
+
+		public String getHost() {
+			final String host = getValue(PROP_HOST);
+			if ((host == null) || host.isEmpty()) {
+				return "0.0.0.0";
+			}
+			return host;
 		}
 
 		public int getPort() {

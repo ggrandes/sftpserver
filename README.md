@@ -22,6 +22,8 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 	#
 	## Global Options
 	#
+	# Listen on localhost and localnet
+	#sftpserver.global.host=127.0.0.1,192.168.1.1
 	# Listen on TCP port 22222
 	sftpserver.global.port=22222
 	# Enable compression (requires jzlib) (default: false)
