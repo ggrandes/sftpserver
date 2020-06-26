@@ -59,6 +59,7 @@ import org.apache.sshd.server.ServerBuilder;
 import org.apache.sshd.server.ServerFactoryManager;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
+import org.apache.sshd.server.auth.pubkey.CachingPublicKeyAuthenticator;
 import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.channel.ChannelSessionFactory;
@@ -149,7 +150,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 
 	protected void setupAuth() {
 		sshd.setPasswordAuthenticator(this);
-		sshd.setPublickeyAuthenticator(this);
+		sshd.setPublickeyAuthenticator(new CachingPublicKeyAuthenticator(this));
 		sshd.setGSSAuthenticator(null);
 	}
 
