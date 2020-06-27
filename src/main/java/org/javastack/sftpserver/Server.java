@@ -75,6 +75,7 @@ import org.apache.sshd.server.subsystem.sftp.SftpSubsystemProxy;
 import org.javastack.sftpserver.readonly.ReadOnlyRootedFileSystemProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 /**
  * SFTP Server
@@ -90,6 +91,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	private static final Logger LOG = LoggerFactory.getLogger(Server.class);
 	private Config db;
 	private SshServer sshd;
+	private ServiceLogger logger;
 	private volatile boolean running = true;
 
 	public static void main(final String[] args) {
@@ -99,6 +101,10 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	protected void setupFactories() {
 		final SftpSubsystemFactory sftpSubsys = new SftpSubsystemFactory.Builder()
 				.withFileSystemAccessor(new CustomSftpFileSystemAccessor()).build();
+		// Request logger
+		sftpSubsys.addSftpEventListener(logger);
+		// Session logger
+		sshd.addSessionListener(logger);
 		// org.apache.sshd.common.BaseBuilder
 		sshd.setSubsystemFactories(Collections.singletonList(sftpSubsys));
 		sshd.setChannelFactories(Collections.singletonList(ChannelSessionFactory.INSTANCE));
@@ -228,7 +234,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		} finally {
 			closeQuietly(is);
 		}
-		return new Config(db);
+		return new Config(db, logger);
 
 	}
 
@@ -247,6 +253,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 
 	public void start() {
 		LOG.info("Starting");
+		logger = new ServiceLogger();
 		db = loadConfig();
 		LOG.info("BouncyCastle enabled=" + SecurityUtils.isBouncyCastleRegistered());
 		sshd = SshServer.setUpDefaultServer();
@@ -266,6 +273,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			setupCompress(enableCompress);
 			setupDummyShell(enableDummyShell);
 			loadHtPasswd();
+			logger.setLogRequest(db.enableLogRequest());
 			sshd.setHost(host);
 			sshd.setPort(port);
 			LOG.info("Listen on host=" + host + " port=" + port);
@@ -310,20 +318,22 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 
 	@Override
 	public boolean authenticate(final String username, final String password, final ServerSession session) {
-		LOG.info("Request auth (Password) for username=" + username);
+		logger.authPasswordPreLogin(session, username);
 		if ((username != null) && (password != null)) {
-			return db.checkUserPassword(username, password);
+			return db.checkUserPassword(session, username, password);
 		}
+		logger.authPasswordPostLogin(session, username, Level.ERROR, "[null data][FAIL]");
 		return false;
 	}
 
 	@Override
 	public boolean authenticate(final String username, final PublicKey key, final ServerSession session) {
-		LOG.info("Request auth (PublicKey) for username=" + username);
+		logger.authPublicKeyPreLogin(session, username, key);
 		// File f = new File("/home/" + username + "/.ssh/authorized_keys");
 		if ((username != null) && (key != null)) {
-			return db.checkUserPublicKey(username, key);
+			return db.checkUserPublicKey(session, username, key);
 		}
+		logger.authPublicKeyPostLogin(session, username, key, Level.ERROR, "[null data][FAIL]");
 		return false;
 	}
 
@@ -349,6 +359,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		public static final String PROP_PORT = "port";
 		public static final String PROP_COMPRESS = "compress";
 		public static final String PROP_DUMMY_SHELL = "dummyshell";
+		public static final String PROP_LOG_REQUEST = "logrequest";
 		public static final String PROP_HEARTBEAT = "heartbeat";
 		public static final String PROP_KEX_ALGORITHMS = "kexalgorithms";
 		public static final String PROP_CIPHERS = "ciphers";
@@ -367,9 +378,11 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		public static final String PROP_ENABLE_WRITE = "writepermission"; // true / false
 
 		private final Properties db;
+		private final ServiceLogger logger;
 
-		public Config(final Properties db) {
+		public Config(final Properties db, final ServiceLogger logger) {
 			this.db = db;
+			this.logger = logger;
 		}
 
 		// Global config
@@ -379,6 +392,10 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 
 		public boolean enableDummyShell() {
 			return Boolean.parseBoolean(getValue(PROP_DUMMY_SHELL));
+		}
+
+		public boolean enableLogRequest() {
+			return Boolean.parseBoolean(getValue(PROP_LOG_REQUEST));
 		}
 
 		public String getHost() {
@@ -416,7 +433,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			}
 			return hb;
 		}
-		
+
 		public String getKexAlgorithms() {
 			final String value = getValue(PROP_KEX_ALGORITHMS);
 			if (value == null) {
@@ -424,7 +441,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			}
 			return value;
 		}
-		
+
 		public String getCiphers() {
 			final String value = getValue(PROP_CIPHERS);
 			if (value == null) {
@@ -432,7 +449,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			}
 			return value;
 		}
-		
+
 		public String getMacs() {
 			final String value = getValue(PROP_MACS);
 			if (value == null) {
@@ -462,56 +479,51 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			return Boolean.parseBoolean(value);
 		}
 
-		public boolean checkUserPassword(final String user, final String pwd) {
-			final StringBuilder sb = new StringBuilder(96);
+		public boolean checkUserPassword(final ServerSession session, final String user, final String pwd) {
+			final StringBuilder sb = new StringBuilder(40);
 			boolean traceInfo = false;
 			boolean authOk = false;
-			sb.append("Request auth (Password) for username=").append(user).append(" ");
 			try {
 				if (!isEnabledUser(user)) {
-					sb.append("(user disabled)");
+					sb.append("[user disabled]");
 					return authOk;
 				}
 				final String value = getValue(user, PROP_PWD);
 				if (value == null) {
-					sb.append("(no password)");
+					sb.append("[no password]");
 					return authOk;
 				}
 				final boolean isCrypted = PasswordEncrypt.isCrypted(value);
 				authOk = isCrypted ? PasswordEncrypt.checkPassword(value, pwd) : value.equals(pwd);
-				sb.append(isCrypted ? "(encrypted)" : "(unencrypted)");
+				if (!isCrypted) {
+					sb.append("[config-unencrypted]");
+				}
 				traceInfo = isCrypted;
 			} finally {
-				sb.append(": ").append(authOk ? "OK" : "FAIL");
+				sb.append("[").append(authOk ? "OK" : "FAIL").append("]");
 				if (authOk) {
-					if (traceInfo) {
-						LOG.info(sb.toString());
-					} else {
-						LOG.warn(sb.toString());
-					}
+					logger.authPasswordPostLogin(session, user, (traceInfo ? Level.INFO : Level.WARN), sb.toString());
 				} else {
-					LOG.error(sb.toString());
+					logger.authPasswordPostLogin(session, user, Level.ERROR, sb.toString());
 				}
 			}
 			return authOk;
 		}
 
-		public boolean checkUserPublicKey(final String user, final PublicKey key) {
+		public boolean checkUserPublicKey(final ServerSession session, final String user, final PublicKey key) {
 			final String encodedKey = PublicKeyEntry.toString(key);
-			final StringBuilder sb = new StringBuilder(96);
+			final StringBuilder sb = new StringBuilder(40);
 			boolean authOk = false;
-			sb.append("Request auth (PublicKey) for username=").append(user);
-			sb.append(" (").append(key.getAlgorithm()).append(")");
 			try {
 				if (!isEnabledUser(user)) {
-					sb.append(" (user disabled)");
+					sb.append("[user disabled]");
 					return authOk;
 				}
 				for (int i = 1; i < 1024; i++) {
 					final String value = getValue(user, PROP_KEY + i);
 					if (value == null) {
 						if (i == 1)
-							sb.append(" (no publickey)");
+							sb.append("[no publickey]");
 						break;
 					} else {
 						// Strip comment in keys
@@ -520,17 +532,20 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 						final int s2 = value.indexOf(' ', s1 + 1);
 						final String ukey = (s2 > s1 ? value.substring(0, s2) : value);
 						if (ukey.equals(encodedKey)) {
+							if ((s1 > 0) && (s1 < s2)) {
+								sb.append("[").append(value.substring(0, s1)).append("]");
+							}
 							authOk = true;
 							break;
 						}
 					}
 				}
 			} finally {
-				sb.append(": ").append(authOk ? "OK" : "FAIL");
+				sb.append("[").append(authOk ? "OK" : "FAIL").append("]");
 				if (authOk) {
-					LOG.info(sb.toString());
+					logger.authPublicKeyPostLogin(session, user, key, Level.INFO, sb.toString());
 				} else {
-					LOG.error(sb.toString());
+					logger.authPublicKeyPostLogin(session, user, key, Level.ERROR, sb.toString());
 				}
 			}
 			return authOk;

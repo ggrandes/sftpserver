@@ -30,6 +30,8 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 	sftpserver.global.compress=true
 	# Enable dummy shell (default: false)
 	sftpserver.global.dummyshell=true
+	# Enable log request (default: false)
+	sftpserver.global.logrequest=true
 	#
 	## Configure user "test"
 	#
