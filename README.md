@@ -2,7 +2,7 @@
 
 SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Source Java project under Apache License v2.0
 
-### Current Stable Version is [1.3.4](https://maven-release.s3.amazonaws.com/release/org/javastack/sftpserver/1.3.4/sftpserver-1.3.4-bin.zip)
+### Current Stable Version is [1.3.5](https://maven-release.s3.amazonaws.com/release/org/javastack/sftpserver/1.3.5/sftpserver-1.3.5-bin.zip)
 
 ---
 
