@@ -108,19 +108,12 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		// org.apache.sshd.common.BaseBuilder
 		sshd.setSubsystemFactories(Collections.singletonList(sftpSubsys));
 		sshd.setChannelFactories(Collections.singletonList(ChannelSessionFactory.INSTANCE));
-		// NOTE: Not all of these are supported by sshd-core
-		// man 5 sshd_config : Ciphers
-		// org.apache.sshd.common.config.ConfigFileReaderSupport.DEFAULT_CIPHERS
-		SshConfigFileReader.configureCiphers(sshd, //
-				db.getCiphers(), //
-				true, true);
-		// man 5 sshd_config : KexAlgorithms
-		// org.apache.sshd.common.config.ConfigFileReaderSupport.DEFAULT_KEX_ALGORITHMS
 		SshConfigFileReader.configureKeyExchanges(sshd, //
 				db.getKexAlgorithms(), //
 				true, ServerBuilder.DH2KEX, true);
-		// man 5 sshd_config : MACs
-		// org.apache.sshd.common.config.ConfigFileReaderSupport.DEFAULT_MACS
+		SshConfigFileReader.configureCiphers(sshd, //
+				db.getCiphers(), //
+				true, true);
 		SshConfigFileReader.configureMacs(sshd, //
 				db.getMacs(), //
 				true, true);
@@ -340,12 +333,38 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	// =================== Helper Classes
 
 	static class Config {
+		// @see https://stribika.github.io/2015/01/04/secure-secure-shell.html
+		// @see http://manpages.ubuntu.com/manpages/focal/man5/sshd_config.5.html
+		/**
+		 * man 5 sshd_config : KexAlgorithms
+		 * 
+		 * @see org.apache.sshd.common.config.ConfigFileReaderSupport#DEFAULT_KEX_ALGORITHMS
+		 * @see org.apache.sshd.common.kex.BuiltinDHFactories
+		 * @implNote Not all kex/ciphers/macs are supported by sshd-core
+		 */
 		public static final String DEFAULT_KEX_ALGORITHMS = "curve25519-sha256,curve25519-sha256@libssh.org," + //
+				"diffie-hellman-group14-sha256," + //
+				"diffie-hellman-group16-sha512," + //
+				"diffie-hellman-group-exchange-sha256," + //
 				"ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521," + //
-				"diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha1";
+				"diffie-hellman-group14-sha1";
+		/**
+		 * man 5 sshd_config : Ciphers
+		 * 
+		 * @see org.apache.sshd.common.config.ConfigFileReaderSupport#DEFAULT_CIPHERS
+		 * @see org.apache.sshd.common.cipher.BuiltinCiphers
+		 * @implNote Not all kex/ciphers/macs are supported by sshd-core
+		 */
 		public static final String DEFAULT_CIPHERS = "chacha20-poly1305@openssh.com," + //
 				"aes128-ctr,aes192-ctr,aes256-ctr," + //
 				"aes128-gcm@openssh.com,aes256-gcm@openssh.com";
+		/**
+		 * man 5 sshd_config : MACs
+		 * 
+		 * @see org.apache.sshd.common.config.ConfigFileReaderSupport#DEFAULT_MACS
+		 * @see org.apache.sshd.common.mac.BuiltinMacs
+		 * @implNote Not all kex/ciphers/macs are supported by sshd-core
+		 */
 		public static final String DEFAULT_MACS = "umac-64-etm@openssh.com,umac-128-etm@openssh.com," + //
 				"hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com," + //
 				"hmac-sha1-etm@openssh.com," + //
