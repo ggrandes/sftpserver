@@ -52,6 +52,7 @@ grant {
   permission java.io.FilePermission "${java.io.tmpdir}${/}-", "read, write, delete";
   //
   permission java.io.FilePermission "/etc/resolv.conf", "read";
+  permission java.io.FilePermission "/etc/ssh/moduli", "read";
   permission java.io.FilePermission "${sftp.home}/-", "read";
   permission java.io.FilePermission "${sftp.home}/keys/hostkey.ser", "read, write";
   permission java.io.FilePermission "${sftp.home}/keys/hostkey.pem", "read, write";

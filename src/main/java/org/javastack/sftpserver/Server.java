@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.URL;
 import java.nio.file.FileSystem;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -64,6 +65,7 @@ import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.channel.ChannelSessionFactory;
 import org.apache.sshd.server.command.Command;
+import org.apache.sshd.server.kex.Moduli;
 import org.apache.sshd.server.keyprovider.AbstractGeneratorHostKeyProvider;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.scp.ScpCommandFactory;
@@ -244,6 +246,56 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		PropertyResolverUtils.updateProperty(sshd, ServerFactoryManager.SERVER_IDENTIFICATION, "SSHD");
 	}
 
+	/**
+	 * Filter the moduli file contains prime numbers and generators used by
+	 * Diffie-Hellman Group Exchange.
+	 * 
+	 * @see org.apache.sshd.common.kex.BuiltinDHFactories#dhgex256
+	 *      diffie-hellman-group-exchange-sha256
+	 * @see org.apache.sshd.common.kex.BuiltinDHFactories#dhgex
+	 *      diffie-hellman-group-exchange-sha1
+	 * @see org.apache.sshd.server.kex.DHGEXServer
+	 * @see org.apache.sshd.server.kex.Moduli
+	 * @see http://manpages.ubuntu.com/manpages/focal/man5/moduli.5.html
+	 */
+	private void hackModuliDHGEX() {
+		URL srcModuli = null;
+		final File sysLinuxModuli = new File("/etc/ssh/moduli");
+		if (sysLinuxModuli.canRead()) {
+			try {
+				srcModuli = sysLinuxModuli.toURI().toURL();
+				LOG.info("Linux moduli file: " + sysLinuxModuli);
+			} catch (IOException e) {
+			}
+		} else {
+			final String moduliPath = Moduli.INTERNAL_MODULI_RESPATH;
+			srcModuli = Moduli.class.getResource(moduliPath);
+			if (srcModuli == null) {
+				LOG.warn("Missing internal moduli file: " + moduliPath);
+			}
+		}
+		if (srcModuli != null) {
+			final File newModuli = new File(System.getProperty("java.io.tmpdir", "/tmp/"), "moduli.sftpd");
+			if (!newModuli.exists() // create
+					|| (newModuli.length() <= 0) // empty
+					|| (System.currentTimeMillis() - newModuli.lastModified() > TimeUnit.DAYS.toMillis(1))) { // 1day
+				try {
+					LOG.info("Filtering moduli file:" + srcModuli.toExternalForm());
+					final List<String> data = ModuliFilter.filterModuli(srcModuli, //
+							db.getMinSizeDHGEX(), db.getMaxSizeDHGEX());
+					ModuliFilter.writeModuli(newModuli, data);
+				} catch (IOException e) {
+					LOG.error("Error filtering moduli: " + e, e);
+				}
+			}
+			if ((newModuli != null) && newModuli.canRead() && (newModuli.length() > 0)) {
+				LOG.warn("Using moduli file: " + newModuli);
+				PropertyResolverUtils.updateProperty(sshd, ServerFactoryManager.MODULI_URL,
+						newModuli.toURI().toString());
+			}
+		}
+	}
+
 	public void start() {
 		LOG.info("Starting");
 		logger = new ServiceLogger();
@@ -252,6 +304,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		sshd = SshServer.setUpDefaultServer();
 		LOG.info("SSHD " + sshd.getVersion());
 		hackVersion();
+		hackModuliDHGEX();
 		setupFactories();
 		setupKeyPair();
 		setupScp();
@@ -335,6 +388,8 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	static class Config {
 		// @see https://stribika.github.io/2015/01/04/secure-secure-shell.html
 		// @see http://manpages.ubuntu.com/manpages/focal/man5/sshd_config.5.html
+		public static final int DEFAULT_DHGEX_MIN = 2000;
+		public static final int DEFAULT_DHGEX_MAX = 8200;
 		/**
 		 * man 5 sshd_config : KexAlgorithms
 		 * 
@@ -383,6 +438,8 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		public static final String PROP_KEX_ALGORITHMS = "kexalgorithms";
 		public static final String PROP_CIPHERS = "ciphers";
 		public static final String PROP_MACS = "macs";
+		public static final String PROP_DHGEX_MIN = "dhgex-min";
+		public static final String PROP_DHGEX_MAX = "dhgex-max";
 		// HtPasswd config
 		public static final String PROP_HTPASSWD = BASE + "." + "htpasswd";
 		public static final String PROP_HT_HOME = "homedirectory";
@@ -475,6 +532,22 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 				return DEFAULT_MACS;
 			}
 			return value;
+		}
+
+		public int getMinSizeDHGEX() {
+			final String value = getValue(PROP_DHGEX_MIN);
+			if (value == null) {
+				return DEFAULT_DHGEX_MIN;
+			}
+			return Integer.parseInt(value);
+		}
+
+		public int getMaxSizeDHGEX() {
+			final String value = getValue(PROP_DHGEX_MAX);
+			if (value == null) {
+				return DEFAULT_DHGEX_MAX;
+			}
+			return Integer.parseInt(value);
 		}
 
 		// User config
