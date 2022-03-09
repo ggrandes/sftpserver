@@ -5,11 +5,11 @@
 
 	<groupId>org.javastack</groupId>
 	<artifactId>sftpserver</artifactId>
-	<version>1.3.5</version>
+	<version>1.4.0</version>
 	<description>SFTP Server (SSH File Transfer Protocol)</description>
 
 	<name>${project.groupId}:${project.artifactId}</name>
-	<url>https://github.com/ggrandes/${project.artifactId}</url>
+	<url>https://github.com/ggrandes/sftpserver</url>
 	<licenses>
 		<license>
 			<name>The Apache License, Version 2.0</name>
@@ -32,69 +32,78 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<java.version>1.8</java.version>
+		<slf4j.version>1.7.36</slf4j.version>
+		<mina.version>2.1.6</mina.version>
+		<sshd.version>2.8.0</sshd.version>
+		<commons-codec.version>1.15</commons-codec.version>
+		<bc.version>1.70</bc.version>
+		<eddsa.version>0.3.0</eddsa.version>
+		<jzlib.version>1.1.3</jzlib.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.mina</groupId>
 			<artifactId>mina-core</artifactId>
-			<version>2.1.3</version>
+			<version>${mina.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.sshd</groupId>
 			<artifactId>sshd-core</artifactId>
-			<version>2.5.0</version>
+			<version>${sshd.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.sshd</groupId>
 			<artifactId>sshd-sftp</artifactId>
-			<version>2.5.0</version>
+			<version>${sshd.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.sshd</groupId>
 			<artifactId>sshd-scp</artifactId>
-			<version>2.5.0</version>
+			<version>${sshd.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-codec</groupId>
 			<artifactId>commons-codec</artifactId>
-			<version>1.14</version>
+			<version>${commons-codec.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcprov-jdk15on</artifactId>
-			<version>1.65.01</version>
+			<version>${bc.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcpkix-jdk15on</artifactId>
-			<version>1.65</version>
+			<version>${bc.version}</version>
 		</dependency>
 		<dependency>
 			<!-- For ed25519 support -->
 			<groupId>net.i2p.crypto</groupId>
 			<artifactId>eddsa</artifactId>
-			<version>0.3.0</version>
+			<version>${eddsa.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-			<version>1.7.30</version>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<!-- Log4j 1.2 replacement -->
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-reload4j</artifactId>
+			<version>${slf4j.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.7.30</version>
-		</dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.17</version>
+			<artifactId>jcl-over-slf4j</artifactId>
+			<version>${slf4j.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.jcraft</groupId>
 			<artifactId>jzlib</artifactId>
-			<version>1.1.3</version>
+			<version>${jzlib.version}</version>
 		</dependency>
 	</dependencies>
 
@@ -103,22 +112,28 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.3.2</version>
+				<version>3.8.1</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
 				</configuration>
 			</plugin>
 			<!-- Package Classes to JAR to upload to repo -->
 			<plugin>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.3.1</version>
+				<version>3.2.2</version>
 				<configuration>
 					<finalName>${project.artifactId}-${project.version}</finalName>
 					<forceCreation>true</forceCreation>
 					<archive>
+						<manifest>
+							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+						</manifest>
 						<manifestEntries>
 							<Built-By>maven</Built-By>
+							<Implementation-Vendor>${project.groupId}</Implementation-Vendor>
+							<Implementation-Title>${project.groupId}:${project.artifactId}</Implementation-Title>
+							<Implementation-Version>${project.version}</Implementation-Version>
 						</manifestEntries>
 					</archive>
 					<excludes>
@@ -133,7 +148,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-				<version>2.2.1</version>
+				<version>3.2.1</version>
 				<executions>
 					<execution>
 						<goals>
@@ -157,9 +172,9 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.5.3</version>
+				<version>3.3.0</version>
 				<configuration>
-					<descriptor>assembly/package.xml</descriptor>
+					<descriptors>assembly/package.xml</descriptors>
 					<finalName>${project.artifactId}-${project.version}</finalName>
 				</configuration>
 				<executions>

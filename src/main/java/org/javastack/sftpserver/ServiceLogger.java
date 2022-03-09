@@ -15,8 +15,8 @@ import org.apache.sshd.common.session.Session;
 import org.apache.sshd.common.session.SessionListener;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 import org.apache.sshd.server.session.ServerSession;
-import org.apache.sshd.server.subsystem.sftp.Handle;
-import org.apache.sshd.server.subsystem.sftp.SftpEventListener;
+import org.apache.sshd.sftp.server.Handle;
+import org.apache.sshd.sftp.server.SftpEventListener;
 import org.slf4j.event.Level;
 
 public class ServiceLogger extends AbstractLoggingBean implements SftpEventListener, SessionListener {

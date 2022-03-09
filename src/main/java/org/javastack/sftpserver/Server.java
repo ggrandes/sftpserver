@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.NamedResource;
 import org.apache.sshd.common.PropertyResolver;
-import org.apache.sshd.common.PropertyResolverUtils;
 import org.apache.sshd.common.cipher.BuiltinCiphers;
 import org.apache.sshd.common.compression.BuiltinCompressions;
 import org.apache.sshd.common.compression.Compression;
@@ -54,10 +53,11 @@ import org.apache.sshd.common.mac.BuiltinMacs;
 import org.apache.sshd.common.session.SessionContext;
 import org.apache.sshd.common.session.SessionHeartbeatController.HeartbeatType;
 import org.apache.sshd.common.util.security.SecurityUtils;
+import org.apache.sshd.core.CoreModuleProperties;
+import org.apache.sshd.scp.server.ScpCommandFactory;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.ServerBuilder;
-import org.apache.sshd.server.ServerFactoryManager;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.auth.pubkey.CachingPublicKeyAuthenticator;
@@ -68,12 +68,11 @@ import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.kex.Moduli;
 import org.apache.sshd.server.keyprovider.AbstractGeneratorHostKeyProvider;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
-import org.apache.sshd.server.scp.ScpCommandFactory;
 import org.apache.sshd.server.session.ServerSession;
 import org.apache.sshd.server.shell.ShellFactory;
-import org.apache.sshd.server.subsystem.sftp.SftpFileSystemAccessor;
-import org.apache.sshd.server.subsystem.sftp.SftpSubsystemFactory;
-import org.apache.sshd.server.subsystem.sftp.SftpSubsystemProxy;
+import org.apache.sshd.sftp.server.SftpFileSystemAccessor;
+import org.apache.sshd.sftp.server.SftpSubsystemFactory;
+import org.apache.sshd.sftp.server.SftpSubsystemProxy;
 import org.javastack.sftpserver.readonly.ReadOnlyRootedFileSystemProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -243,7 +242,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 	}
 
 	private void hackVersion() {
-		PropertyResolverUtils.updateProperty(sshd, ServerFactoryManager.SERVER_IDENTIFICATION, "SSHD");
+		CoreModuleProperties.SERVER_IDENTIFICATION.set(sshd, "SSHD");
 	}
 
 	/**
@@ -290,8 +289,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			}
 			if ((newModuli != null) && newModuli.canRead() && (newModuli.length() > 0)) {
 				LOG.warn("Using moduli file: " + newModuli);
-				PropertyResolverUtils.updateProperty(sshd, ServerFactoryManager.MODULI_URL,
-						newModuli.toURI().toString());
+				CoreModuleProperties.MODULI_URL.set(sshd, newModuli.toURI().toString());
 			}
 		}
 	}
@@ -706,38 +704,38 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 
 	static class CustomSftpFileSystemAccessor implements SftpFileSystemAccessor {
 		@Override
-		public void setFileAttribute(final ServerSession session, final SftpSubsystemProxy subsystem, final Path file,
+		public void setFileAttribute(final SftpSubsystemProxy subsystem, final Path file,
 				final String view, final String attribute, final Object value, final LinkOption... options)
 				throws IOException {
 			throw new UnsupportedOperationException("Attribute set not supported for " + file);
 		}
 
 		@Override
-		public void setFileOwner(final ServerSession session, final SftpSubsystemProxy subsystem, final Path file,
+		public void setFileOwner(final SftpSubsystemProxy subsystem, final Path file,
 				final Principal value, final LinkOption... options) throws IOException {
 			throw new UnsupportedOperationException("Owner set not supported for " + file);
 		}
 
 		@Override
-		public void setGroupOwner(final ServerSession session, final SftpSubsystemProxy subsystem, final Path file,
+		public void setGroupOwner(final SftpSubsystemProxy subsystem, final Path file,
 				final Principal value, final LinkOption... options) throws IOException {
 			throw new UnsupportedOperationException("Group set not supported");
 		}
 
 		@Override
-		public void setFilePermissions(final ServerSession session, final SftpSubsystemProxy subsystem, final Path file,
+		public void setFilePermissions(final SftpSubsystemProxy subsystem, final Path file,
 				final Set<PosixFilePermission> perms, final LinkOption... options) throws IOException {
 			throw new UnsupportedOperationException("Permissions set not supported");
 		}
 
 		@Override
-		public void setFileAccessControl(final ServerSession session, final SftpSubsystemProxy subsystem,
+		public void setFileAccessControl(final SftpSubsystemProxy subsystem,
 				final Path file, final List<AclEntry> acl, final LinkOption... options) throws IOException {
 			throw new UnsupportedOperationException("ACL set not supported");
 		}
 
 		@Override
-		public void createLink(final ServerSession session, final SftpSubsystemProxy subsystem, final Path link,
+		public void createLink(final SftpSubsystemProxy subsystem, final Path link,
 				final Path existing, final boolean symLink) throws IOException {
 			throw new UnsupportedOperationException("Link not supported");
 		}

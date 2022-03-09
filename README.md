@@ -2,7 +2,7 @@
 
 SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Source Java project under Apache License v2.0
 
-### Current Stable Version is [1.3.5](https://maven-release.s3.amazonaws.com/release/org/javastack/sftpserver/1.3.5/sftpserver-1.3.5-bin.zip)
+### Current Stable Version is [1.4.0](https://maven-release.s3.amazonaws.com/release/org/javastack/sftpserver/1.4.0/sftpserver-1.4.0-bin.zip)
 
 ---
 
@@ -14,6 +14,7 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 | 1.1.x      | 1.6+ |
 | 1.2.x      | 1.7+ |
 | 1.3.x      | 1.8+ |
+| 1.4.x      | 1.8+ |
 
 ## Config:
 
@@ -128,14 +129,14 @@ Maven Dependencies:
 
 * commons-codec-`XXX`.jar
 
-[Log4J (logging)](http://logging.apache.org/log4j/1.2/)
+[Log4J/Reload4J (logging)](https://reload4j.qos.ch/manual.html)
 
-* log4j-`XXX`.jar
+* reload4j-`XXX`.jar
 
 [SLF4J (logging)](http://www.slf4j.org/)
 
 * slf4j-api-`XXX`.jar
-* slf4j-log4j12-`XXX`.jar
+* slf4j-reload4j-`XXX`.jar
 
 [Bouncy Castle (encryption)](http://www.bouncycastle.org/java.html)
 
