@@ -59,10 +59,9 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 	#
 	# Listen on TCP port 22222
 	sftpserver.global.port=22222
-	# Enable compression (requires jzlib) (default: false)
-	sftpserver.global.compress=true
-	# Enable dummy shell (default: false)
-	sftpserver.global.dummyshell=true
+	# ...
+	# ... same params as "all in one file" ...
+	# ...
 	#
 	## Configure htpasswd
 	#
