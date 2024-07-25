@@ -5,7 +5,7 @@
 
 	<groupId>org.javastack</groupId>
 	<artifactId>sftpserver</artifactId>
-	<version>1.4.0</version>
+	<version>1.4.1</version>
 	<description>SFTP Server (SSH File Transfer Protocol)</description>
 
 	<name>${project.groupId}:${project.artifactId}</name>
@@ -34,10 +34,10 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
 		<slf4j.version>1.7.36</slf4j.version>
-		<mina.version>2.1.6</mina.version>
-		<sshd.version>2.8.0</sshd.version>
-		<commons-codec.version>1.15</commons-codec.version>
-		<bc.version>1.70</bc.version>
+		<mina.version>2.1.8</mina.version>
+		<sshd.version>2.13.1</sshd.version>
+		<commons-codec.version>1.17.1</commons-codec.version>
+		<bc.version>1.78.1</bc.version>
 		<eddsa.version>0.3.0</eddsa.version>
 		<jzlib.version>1.1.3</jzlib.version>
 	</properties>
@@ -70,12 +70,12 @@
 		</dependency>
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcprov-jdk15on</artifactId>
+			<artifactId>bcprov-jdk18on</artifactId>
 			<version>${bc.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcpkix-jdk15on</artifactId>
+			<artifactId>bcpkix-jdk18on</artifactId>
 			<version>${bc.version}</version>
 		</dependency>
 		<dependency>
