@@ -102,5 +102,6 @@ public class ReadOnlyFileChannel extends FileChannel {
 
 	@Override
 	protected void implCloseChannel() throws IOException {
+		chan.close();
 	}
 };
