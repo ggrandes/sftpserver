@@ -3,7 +3,7 @@
 //
 // This file contains a default set of security policies to be enforced by JVM
 //
-// $Id: sftpd.policy,v 1.4.1 2024/07/25 17:40:00 ggrandes Exp $
+// $Id: sftpd.policy,v 1.5.0 2024/08/20 19:50:00 ggrandes Exp $
 // ============================================================================
 //
 // Load with: -Djava.security.manager -Djava.security.policy=sftpd.policy
@@ -15,8 +15,10 @@
 //
 grant {
   //
+  // https://docs.oracle.com/javase/8/docs/api/java/util/logging/LoggingPermission.html
   permission java.util.logging.LoggingPermission "control";
   //
+  // https://docs.oracle.com/javase/8/docs/api/java/util/PropertyPermission.html
   permission java.util.PropertyPermission "org.bouncycastle.*", "read";
   permission java.util.PropertyPermission "org.apache.sshd.*", "read";
   permission java.util.PropertyPermission "log4j.*", "read";
@@ -30,6 +32,16 @@ grant {
   // org.apache.sshd.common.SyspropsMapWrapper
   permission java.util.PropertyPermission "*", "read, write";
   //
+  // https://docs.oracle.com/javase/8/docs/api/java/lang/RuntimePermission.html
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.reflect";
+  permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.reflect";
+  permission java.lang.RuntimePermission "createClassLoader";
+  permission java.lang.RuntimePermission "getClassLoader";
+  permission java.lang.RuntimePermission "setContextClassLoader";
+  permission java.lang.RuntimePermission "closeClassLoader";
+  permission java.lang.RuntimePermission "setFactory";
+  permission java.lang.RuntimePermission "getProtectionDomain";
+  //
   permission java.lang.RuntimePermission "shutdownHooks";
   permission java.lang.RuntimePermission "modifyThread";
   permission java.lang.RuntimePermission "readFileDescriptor";
@@ -38,30 +50,36 @@ grant {
   permission java.lang.RuntimePermission "fileSystemProvider";
   permission java.lang.RuntimePermission "accessDeclaredMembers";
   //
+  // https://docs.oracle.com/javase/8/docs/api/java/security/SecurityPermission.html
   permission java.security.SecurityPermission "getProperty.org.bouncycastle.*";
   permission java.security.SecurityPermission "removeProviderProperty.BC";
   permission java.security.SecurityPermission "putProviderProperty.BC";
-  permission java.security.SecurityPermission "insertProvider.BC";
   permission java.security.SecurityPermission "putProviderProperty.EdDSA";
-  permission java.security.SecurityPermission "insertProvider.EdDSA";
+  permission java.security.SecurityPermission "insertProvider";
   //
+  // https://docs.oracle.com/javase/8/docs/api/java/lang/reflect/ReflectPermission.html
   permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
   //
+  // https://docs.oracle.com/javase/8/docs/api/java/net/NetPermission.html
+  permission java.net.NetPermission "specifyStreamHandler";
+  //
+  // https://docs.oracle.com/javase/8/docs/api/java/net/SocketPermission.html
   permission java.net.SocketPermission "localhost", "listen";
   permission java.net.SocketPermission "*", "accept, resolve";
   //
+  // https://docs.oracle.com/javase/8/docs/api/java/io/FilePermission.html
   permission java.io.FilePermission "${java.home}${/}-", "read";
   permission java.io.FilePermission "${java.io.tmpdir}${/}-", "read, write, delete";
   //
   permission java.io.FilePermission "/etc/resolv.conf", "read";
   permission java.io.FilePermission "/etc/ssh/moduli", "read";
-  permission java.io.FilePermission "${sftp.home}/-", "read";
-  permission java.io.FilePermission "${sftp.home}/keys/hostkey.ser", "read, write";
-  permission java.io.FilePermission "${sftp.home}/keys/hostkey.pem", "read, write";
+  permission java.io.FilePermission "${sftp.home}${/}-", "read";
+  permission java.io.FilePermission "${sftp.home}${/}keys${/}hostkey.ser", "read, write";
+  permission java.io.FilePermission "${sftp.home}${/}keys${/}hostkey.pem", "read, write";
   // Home for Users
-  permission java.io.FilePermission "${sftp.home}/home/-", "read, write, delete";
+  permission java.io.FilePermission "${sftp.home}${/}home${/}-", "read, write, delete";
   // Directory for logs (if use log4j)
-  permission java.io.FilePermission "${sftp.home}/log/-", "read, write";
+  permission java.io.FilePermission "${sftp.home}${/}log${/}-", "read, write";
   //
   // This Disable all security
   //permission java.security.AllPermission;

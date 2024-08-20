@@ -2,7 +2,7 @@
 
 SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Source Java project under Apache License v2.0
 
-### Current Stable Version is [1.4.2](https://maven-release.s3.amazonaws.com/release/org/javastack/sftpserver/1.4.2/sftpserver-1.4.2-bin.zip)
+### Current Stable Version is [1.5.0](https://maven-release.s3.amazonaws.com/release/org/javastack/sftpserver/1.5.0/sftpserver-1.5.0-bin.zip)
 
 ---
 
@@ -15,6 +15,7 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 | 1.2.x      | 1.7+ |
 | 1.3.x      | 1.8+ |
 | 1.4.x      | 1.8+ |
+| 1.5.x      | 1.8+ |
 
 ## Config:
 
@@ -106,45 +107,13 @@ SFTP Server (SSH File Transfer Protocol) based on `Apache MINA SSHD`. Open Sourc
 ## MISC
 Current hardcoded values:
 
+* Default `${sftp.home}` is `/opt/sftpd`
 * Hostkeys are writed to: `hostkey.pem` or `hostkey.ser` in `${sftp.home}/keys/` directory
 * SecurityManager/Policy File is in `conf/${ID}/sftpd.policy` (custom) or `lib/sftpd.policy` (generic)
 * Htpasswd File is in `conf/${ID}/htpasswd` (custom) or `conf/htpasswd` (generic)
 * Default KexAlgorithms: `curve25519-sha256, curve25519-sha256@libssh.org, diffie-hellman-group14-sha256, diffie-hellman-group16-sha512, diffie-hellman-group-exchange-sha256, ecdh-sha2-nistp256, ecdh-sha2-nistp384, ecdh-sha2-nistp521, diffie-hellman-group14-sha1`
 * Default Ciphers: `chacha20-poly1305@openssh.com, aes128-ctr, aes192-ctr, aes256-ctr, aes128-gcm@openssh.com, aes256-gcm@openssh.com`
 * Default MACs: `hmac-sha2-256-etm@openssh.com, hmac-sha2-512-etm@openssh.com, hmac-sha1-etm@openssh.com, hmac-sha2-256, hmac-sha2-512, hmac-sha1`
-
----
-
-Maven Dependencies:
-
-[Apache MINA SSHD](http://mina.apache.org/sshd-project/) [CHANGELOG](https://github.com/apache/mina-sshd/tree/master/docs/changes/)
-
-* mina-core-`XXX`.jar
-* sshd-core-`XXX`.jar
-* sshd-sftp-`XXX`.jar
-* sshd-scp-`XXX`.jar
-
-[Apache Commons Codec (password encryption)](http://commons.apache.org/codec/)
-
-* commons-codec-`XXX`.jar
-
-[Log4J/Reload4J (logging)](https://reload4j.qos.ch/manual.html)
-
-* reload4j-`XXX`.jar
-
-[SLF4J (logging)](http://www.slf4j.org/)
-
-* slf4j-api-`XXX`.jar
-* slf4j-reload4j-`XXX`.jar
-
-[Bouncy Castle (encryption)](http://www.bouncycastle.org/java.html)
-
-* bcprov-jdk18on-`XXX`.jar
-* bcpkix-jdk18on-`XXX`.jar
-
-[JZlib (for compression)](http://www.jcraft.com/jzlib/)
-
-* jzlib-`XXX`.jar
 
 ---
 Inspired in [mina-sshd](https://github.com/apache/mina-sshd/blob/master/sshd-core/src/main/java/org/apache/sshd/server/SshServer.java) and [openssh](http://www.openssh.org/).

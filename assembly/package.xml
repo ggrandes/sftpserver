@@ -77,6 +77,13 @@
 			<lineEnding>dos</lineEnding>
 			<fileMode>0644</fileMode>
 		</file>
+        <!-- Fat Jar -->
+		<file>
+			<source>${project.basedir}/target/${project.artifactId}-${project.version}.jar</source>
+			<outputDirectory>lib/</outputDirectory>
+			<destName>${project.artifactId}.jar</destName>
+			<fileMode>0644</fileMode>
+		</file>
 		<file>
 			<source>${project.basedir}/src/main/resources/sftpd.policy</source>
 			<outputDirectory>lib/</outputDirectory>
@@ -84,14 +91,4 @@
 			<fileMode>0644</fileMode>
 		</file>
 	</files>
-	<dependencySets>
-		<dependencySet>
-			<directoryMode>0755</directoryMode>
-			<fileMode>0644</fileMode>
-			<outputDirectory>lib/</outputDirectory>
-			<useProjectArtifact>true</useProjectArtifact>
-			<unpack>false</unpack>
-			<scope>runtime</scope>
-		</dependencySet>
-	</dependencySets>
 </assembly>

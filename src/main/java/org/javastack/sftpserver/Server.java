@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.FileSystem;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.NamedResource;
@@ -84,12 +86,14 @@ import org.slf4j.event.Level;
  * @author Guillermo Grandes / guillermo.grandes[at]gmail.com
  */
 public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
+	public static final String SFTP_CONFIG_PROP = "sftp.config";
 	public static final String CONFIG_FILE = "/sftpd.properties";
 	public static final String HTPASSWD_FILE = "/htpasswd";
 	public static final String HOSTKEY_FILE_PEM = "keys/hostkey.pem";
 	public static final String HOSTKEY_FILE_SER = "keys/hostkey.ser";
 
 	private static final Logger LOG = LoggerFactory.getLogger(Server.class);
+	private URLClassLoader configClassLoader;
 	private Config db;
 	private SshServer sshd;
 	private ServiceLogger logger;
@@ -168,7 +172,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 			}
 			final String htHome = db.getHtValue(Config.PROP_HT_HOME);
 			final boolean htEnableWrite = Boolean.parseBoolean(db.getHtValue(Config.PROP_HT_ENABLE_WRITE));
-			is = getClass().getResourceAsStream(HTPASSWD_FILE);
+			is = getConfigResource(HTPASSWD_FILE);
 			r = new BufferedReader(new InputStreamReader(is));
 			if (is == null) {
 				LOG.error("htpasswd file " + HTPASSWD_FILE + " not found in classpath");
@@ -212,11 +216,35 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 		}
 	}
 
+	protected URLClassLoader initConfigLoader() {
+		final String cp = System.getProperty(SFTP_CONFIG_PROP, "");
+		final List<String> classPath = Arrays.asList(cp
+				.split(Pattern.quote(File.pathSeparator)));
+		final URL[] urls = classPath.stream().map(i -> {
+			try {
+				if (i.startsWith("http://") || i.startsWith("https://")) {
+					return new URL(i);
+				} else {
+					return new File(i).toURI().toURL();
+				}
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}).toArray(URL[]::new);
+		LOG.info("Config loader URLs=" + Arrays.asList(urls));
+
+		return new URLClassLoader(urls);
+	}
+
+	protected InputStream getConfigResource(final String name) throws IOException {
+		return configClassLoader.getResourceAsStream(name.startsWith("/") ? name.substring(1) : name);
+	}
+
 	protected Config loadConfig() {
 		final Properties db = new Properties();
 		InputStream is = null;
 		try {
-			is = getClass().getResourceAsStream(CONFIG_FILE);
+			is = getConfigResource(CONFIG_FILE);
 			if (is == null) {
 				LOG.error("Config file " + CONFIG_FILE + " not found in classpath");
 			} else {
@@ -296,6 +324,7 @@ public class Server implements PasswordAuthenticator, PublickeyAuthenticator {
 
 	public void start() {
 		LOG.info("Starting");
+		configClassLoader = initConfigLoader();
 		logger = new ServiceLogger();
 		db = loadConfig();
 		LOG.info("BouncyCastle enabled=" + SecurityUtils.isBouncyCastleRegistered());

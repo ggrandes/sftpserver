@@ -5,7 +5,7 @@
 
 	<groupId>org.javastack</groupId>
 	<artifactId>sftpserver</artifactId>
-	<version>1.4.2</version>
+	<version>1.5.0</version>
 	<description>SFTP Server (SSH File Transfer Protocol)</description>
 
 	<name>${project.groupId}:${project.artifactId}</name>
@@ -32,6 +32,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<start-class>org.javastack.sftpserver.Server</start-class>
 		<java.version>1.8</java.version>
 		<slf4j.version>1.7.36</slf4j.version>
 		<mina.version>2.1.8</mina.version>
@@ -112,7 +113,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version>
+				<version>3.10.1</version>
 				<configuration>
 					<source>${java.version}</source>
 					<target>${java.version}</target>
@@ -168,6 +169,26 @@
 					</execution>
 				</executions>
 			</plugin>
+			<!-- Jars in Jar -->
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<version>2.6.4</version>
+				<executions>
+					<execution>
+						<id>repackage</id>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<!-- https://docs.spring.io/spring-boot/maven-plugin/packaging.html -->
+					<!-- https://docs.spring.io/spring-boot/specification/executable-jar/launching.html -->
+					<!-- https://docs.spring.io/spring-boot/specification/executable-jar/property-launcher.html -->
+					<mainClass>${start-class}</mainClass>
+				</configuration>
+			</plugin>			
 			<!-- Package ZIP to upload to repo -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
